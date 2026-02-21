@@ -54,7 +54,7 @@
     .header {
       flex-shrink: 0;
       background: var(--card);
-      padding: 48px 18px 12px;
+      padding: calc(env(safe-area-inset-top, 12px) + 12px) 18px 12px;
       border-bottom: 1px solid var(--border);
       z-index: 100;
     }
@@ -82,7 +82,7 @@
       display: flex;
       background: var(--card);
       border-top: 1px solid var(--border);
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      padding-bottom: max(env(safe-area-inset-bottom, 12px), 12px);
     }
     .nav-btn {
       flex: 1; border: none; background: none;
@@ -140,7 +140,13 @@
     }
 
     /* ── SUMMARY STRIP ── */
-    .summary-strip { display: flex; gap: 8px; margin-bottom: 6px; }
+    .summary-strip {
+      flex-shrink: 0;
+      display: flex; gap: 8px;
+      padding: 10px 14px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
     .s-pill { flex: 1; border-radius: 12px; padding: 10px 6px; text-align: center; }
     .s-pill-num { font-size: 24px; font-weight: 800; line-height: 1; }
     .s-pill-lbl { font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; margin-top: 2px; }
@@ -801,8 +807,8 @@
           <button class="jdi-btn jdi-plus"  onclick="adjJDI(1)">+</button>
         </div>
       </div>
+      <div class="summary-strip" id="summaryStrip"></div>
       <div class="today-scroll">
-        <div class="summary-strip" id="summaryStrip"></div>
         <p class="tap-hint">Tap to cycle: Full → Never Zero → Missed → Clear</p>
         <div class="section-lbl">Habits</div>
         <div id="habitList"></div>
@@ -1028,6 +1034,11 @@
           <textarea class="edit-textarea" id="editTextarea"></textarea>
           <div class="edit-title-lbl">Title</div>
           <input class="edit-title-input" id="editTitleInput" type="text">
+          <div class="edit-title-lbl">Date</div>
+          <div class="date-row" style="margin-bottom:0">
+            <label>📅</label>
+            <input type="date" class="date-input" id="editDateInput">
+          </div>
           <div class="edit-actions">
             <button class="save-edit-btn"   onclick="saveEdit()">Save Changes</button>
             <button class="cancel-edit-btn" onclick="cancelEdit()">Cancel</button>
@@ -1805,22 +1816,42 @@
     if (!entry) return;
     document.getElementById('editTextarea').value   = entry.content;
     document.getElementById('editTitleInput').value = entry.title;
+    document.getElementById('editDateInput').value  = entry.date;
+    document.getElementById('editDateInput').max    = todayKey();
     document.getElementById('entryViewMode').style.display = 'none';
     document.getElementById('entryEditMode').style.display = '';
   }
 
   function saveEdit() {
-    const content = document.getElementById('editTextarea').value.trim();
-    const title   = document.getElementById('editTitleInput').value.trim();
+    const content  = document.getElementById('editTextarea').value.trim();
+    const title    = document.getElementById('editTitleInput').value.trim();
+    const newDate  = document.getElementById('editDateInput').value || todayKey();
     if (!content) return;
     const entry = journal.find(e => e.id === currentDetailId);
     if (!entry) return;
-    entry.content = content;
-    entry.title   = title || generateTitle(content);
+    const oldDate  = entry.date;
+    entry.content  = content;
+    entry.title    = title || generateTitle(content);
+    entry.date     = newDate;
     localStorage.setItem('journal', JSON.stringify(journal));
+
+    // Tick journal habit for new date
+    const newLog = getLog(newDate);
+    newLog.habits['h-journal'] = 'full';
+    // If date changed and no other entries remain on old date, untick old date
+    if (newDate !== oldDate) {
+      const stillOnOldDate = journal.some(e => e.id !== currentDetailId && e.date === oldDate);
+      if (!stillOnOldDate) {
+        const oldLog = getLog(oldDate);
+        delete oldLog.habits['h-journal'];
+      }
+    }
+    persist();
+
     // Refresh view mode
     document.getElementById('detailContent').textContent = entry.content;
     document.getElementById('detailTitle').textContent   = entry.title;
+    document.getElementById('detailMeta').textContent    = formatEntryDate(entry.date) + ' · ' + entry.prompt;
     cancelEdit();
     renderJournal();
   }

@@ -8,6 +8,7 @@
   <meta name="apple-mobile-web-app-title" content="Habits">
   <meta name="theme-color" content="#6366f1">
   <link rel="manifest" href="manifest.json">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <title>Habits</title>
   <style>
     :root {
@@ -616,10 +617,59 @@
     }
     .del-entry-btn:active { opacity: .88; }
 
+    /* ── EXPORTED BADGE ── */
+    .exported-badge {
+      font-size: 10px; color: var(--muted);
+      font-weight: 500; font-style: italic;
+    }
+
+    /* ── SELECTION MODE ── */
+    .entry-card.selected {
+      border: 2px solid var(--purple);
+      background: var(--purple-bg);
+    }
+    .entry-card-check {
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+      border: 2px solid var(--border); background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: #fff; transition: all .15s; margin-top: 2px;
+    }
+    .entry-card.selected .entry-card-check { background: var(--purple); border-color: var(--purple); }
+
+    .bulk-export-bar {
+      position: absolute; bottom: 80px; left: 14px; right: 14px;
+      background: var(--purple); color: #fff;
+      border-radius: 14px; padding: 13px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 4px 20px rgba(99,102,241,.5); z-index: 60;
+    }
+    .bulk-count { font-size: 13px; font-weight: 700; }
+    .bulk-export-btn {
+      background: #fff; color: var(--purple);
+      border: none; border-radius: 10px;
+      padding: 8px 16px; font-size: 13px; font-weight: 800;
+      cursor: pointer; font-family: inherit;
+    }
+    .bulk-export-btn:active { opacity: .85; }
+    .bulk-cancel-btn {
+      background: rgba(255,255,255,.2); color: #fff;
+      border: none; border-radius: 10px;
+      padding: 8px 12px; font-size: 13px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+    }
+    .select-toggle-btn {
+      background: var(--bg); border: 2px solid var(--border);
+      border-radius: 20px; padding: 6px 14px;
+      font-size: 13px; font-weight: 700; color: var(--muted);
+      cursor: pointer; font-family: inherit; transition: all .12s;
+    }
+    .select-toggle-btn.active { background: var(--purple-bg); border-color: var(--purple); color: var(--purple-txt); }
+    .select-toggle-btn:active { transform: scale(.96); }
+
     /* ── SEARCH / FILTER PANEL ── */
     .journal-toolbar {
       flex-shrink: 0;
-      display: flex; align-items: center; justify-content: flex-end;
+      display: flex; align-items: center; justify-content: space-between;
       padding: 8px 14px 0;
     }
     .search-toggle-btn {
@@ -840,7 +890,15 @@
     <div class="view" id="view-journal">
       <div class="journal-view-wrap">
         <div class="journal-toolbar">
-          <button class="search-toggle-btn" id="searchToggleBtn" onclick="toggleSearch()">🔍 Search & Filter</button>
+          <button class="select-toggle-btn" id="selectToggleBtn" onclick="toggleSelectionMode()">Select</button>
+          <button class="search-toggle-btn" id="searchToggleBtn" onclick="toggleSearch()">🔍 Search</button>
+        </div>
+        <div class="bulk-export-bar" id="bulkExportBar" style="display:none">
+          <div class="bulk-count" id="bulkCount">0 selected</div>
+          <div style="display:flex;gap:8px">
+            <button class="bulk-cancel-btn" onclick="toggleSelectionMode()">Cancel</button>
+            <button class="bulk-export-btn" onclick="exportSelected()">⬇ Export ZIP</button>
+          </div>
         </div>
         <div class="search-panel" id="searchPanel" style="display:none">
           <input type="text" class="search-input" id="searchInput" placeholder="Search… use * as wildcard" oninput="applyFilters()">
@@ -1414,6 +1472,8 @@
   let filterCategory  = 'all';
   let filterTagLabel  = null;
   let showSearch      = false;
+  let selectionMode   = false;
+  let selectedIds     = new Set();
 
   function wildcardRegex(pattern) {
     const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
@@ -1480,18 +1540,30 @@
       return;
     }
     list.innerHTML = entries.map(e => {
-      const customPills = (e.customTags || []).map(t =>
+      const customPills  = (e.customTags || []).map(t =>
         `<span class="entry-tag-pill ctag-${t.category}">${escHtml(t.label)}</span>`
       ).join('');
+      const isSelected   = selectedIds.has(e.id);
+      const selectedCls  = isSelected ? 'selected' : '';
+      const clickFn      = selectionMode ? `toggleSelectEntry('${e.id}')` : `openEntry('${e.id}')`;
+      const checkHtml    = selectionMode
+        ? `<div class="entry-card-check">${isSelected ? '✓' : ''}</div>` : '';
+      const exportedBadge = e.exported
+        ? '<span class="exported-badge"> · exported</span>' : '';
+      const innerStyle   = selectionMode ? 'style="flex:1;min-width:0"' : '';
+      const cardStyle    = selectionMode ? 'style="display:flex;align-items:flex-start;gap:10px"' : '';
       return `
-        <div class="entry-card" onclick="openEntry('${e.id}')">
-          <div class="entry-card-top">
-            <span class="entry-tag-pill tag-${e.tag}">${escHtml(e.tagLabel)}</span>
-            ${customPills}
-            <span class="entry-date">${formatEntryDate(e.date)}</span>
+        <div class="entry-card ${selectedCls}" onclick="${clickFn}" ${cardStyle}>
+          ${checkHtml}
+          <div ${innerStyle}>
+            <div class="entry-card-top">
+              <span class="entry-tag-pill tag-${e.tag}">${escHtml(e.tagLabel)}</span>
+              ${customPills}
+              <span class="entry-date">${formatEntryDate(e.date)}${exportedBadge}</span>
+            </div>
+            <div class="entry-title">${escHtml(e.title)}</div>
+            <div class="entry-preview">${escHtml(e.content)}</div>
           </div>
-          <div class="entry-title">${escHtml(e.title)}</div>
-          <div class="entry-preview">${escHtml(e.content)}</div>
         </div>`;
     }).join('');
   }
@@ -1527,6 +1599,95 @@
 
   function setTagFilter(label) {
     filterTagLabel = filterTagLabel === label ? null : label;
+    renderJournal();
+  }
+
+  // ── SELECTION MODE ───────────────────────────────────────────────────────────
+  function toggleSelectionMode() {
+    selectionMode = !selectionMode;
+    selectedIds.clear();
+    const btn = document.getElementById('selectToggleBtn');
+    const bar = document.getElementById('bulkExportBar');
+    btn.classList.toggle('active', selectionMode);
+    btn.textContent = selectionMode ? 'Cancel' : 'Select';
+    bar.style.display = 'none';
+    renderJournal();
+  }
+
+  function toggleSelectEntry(id) {
+    if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+    const bar = document.getElementById('bulkExportBar');
+    const cnt = document.getElementById('bulkCount');
+    bar.style.display = selectedIds.size ? 'flex' : 'none';
+    cnt.textContent   = `${selectedIds.size} selected`;
+    renderJournal();
+  }
+
+  // ── EXPORT HELPERS ───────────────────────────────────────────────────────────
+  function sanitizeFilename(str) {
+    return str.replace(/[\/\\:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim().slice(0, 100);
+  }
+
+  function generateMd(entry) {
+    const customTags = (entry.customTags || []);
+    const tagLine    = [entry.tag, ...customTags.map(t => t.label)].join(', ');
+    const peopleLine = customTags.filter(t => t.category === 'people').map(t => t.label).join(', ');
+    const topicsLine = customTags.filter(t => t.category === 'topics').map(t => t.label).join(', ');
+    const inlineTags = [entry.tagLabel, ...customTags.map(t => `[${t.label}]`)].join(' ');
+    return `---
+title: "${entry.title.replace(/"/g, "'")}"
+date: ${entry.date}
+tags: [${tagLine}]${peopleLine ? `\npeople: [${peopleLine}]` : ''}${topicsLine ? `\ntopics: [${topicsLine}]` : ''}
+prompt: "${entry.prompt}"
+source: Voice Journal
+---
+
+${inlineTags}
+
+${entry.content}
+`;
+  }
+
+  async function exportSelected() {
+    const entries = [...selectedIds]
+      .map(id => journal.find(e => e.id === id))
+      .filter(Boolean);
+    if (!entries.length) return;
+
+    if (window.JSZip) {
+      const zip    = new JSZip();
+      const folder = zip.folder('journal-export');
+      entries.forEach(entry => {
+        folder.file(sanitizeFilename(entry.title) + '.md', generateMd(entry));
+        entry.exported = true;
+      });
+      localStorage.setItem('journal', JSON.stringify(journal));
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `journal-export-${todayKey()}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      // Fallback: sequential downloads with delay
+      for (let i = 0; i < entries.length; i++) {
+        await new Promise(r => setTimeout(r, i * 500));
+        const entry = entries[i];
+        const blob  = new Blob([generateMd(entry)], { type: 'text/markdown' });
+        const url   = URL.createObjectURL(blob);
+        const a     = document.createElement('a');
+        a.href      = url;
+        a.download  = sanitizeFilename(entry.title) + '.md';
+        a.click();
+        URL.revokeObjectURL(url);
+        entry.exported = true;
+      }
+      localStorage.setItem('journal', JSON.stringify(journal));
+    }
+
+    toggleSelectionMode();
     renderJournal();
   }
 
@@ -1865,31 +2026,19 @@
   function exportToObsidian() {
     const entry = journal.find(e => e.id === currentDetailId);
     if (!entry) return;
-    const customTags = (entry.customTags || []);
-    const tagLine    = [entry.tag, ...customTags.map(t => t.label)].join(', ');
-    const peopleLine = customTags.filter(t => t.category === 'people').map(t => t.label).join(', ');
-    const topicsLine = customTags.filter(t => t.category === 'topics').map(t => t.label).join(', ');
-    const inlineTags = [entry.tagLabel, ...customTags.map(t => `[${t.label}]`)].join(' ');
-    const md =
-`---
-title: "${entry.title.replace(/"/g, "'")}"
-date: ${entry.date}
-tags: [${tagLine}]${peopleLine ? `\npeople: [${peopleLine}]` : ''}${topicsLine ? `\ntopics: [${topicsLine}]` : ''}
-prompt: "${entry.prompt}"
-source: Voice Journal
----
-
-${inlineTags}
-
-${entry.content}
-`;
-    const blob = new Blob([md], { type: 'text/markdown' });
+    const blob = new Blob([generateMd(entry)], { type: 'text/markdown' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href     = url;
-    a.download = `${entry.date}-${entry.tag}.md`;
+    a.download = sanitizeFilename(entry.title) + '.md';
     a.click();
     URL.revokeObjectURL(url);
+    entry.exported = true;
+    localStorage.setItem('journal', JSON.stringify(journal));
+    // Update meta line to show exported
+    document.getElementById('detailMeta').textContent =
+      formatEntryDate(entry.date) + ' · ' + entry.prompt + ' · exported';
+    renderJournal();
   }
 
   // ── INIT ────────────────────────────────────────────────────────────────────

@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Habits">
+  <meta name="theme-color" content="#6366f1">
+  <link rel="manifest" href="manifest.json">
+  <title>Habits</title>
+  <style>
+    :root {
+      --green:      #22c55e;
+      --green-bg:   #dcfce7;
+      --green-txt:  #15803d;
+      --orange:     #f97316;
+      --orange-bg:  #ffedd5;
+      --orange-txt: #c2410c;
+      --grey:       #9ca3af;
+      --grey-bg:    #f3f4f6;
+      --grey-txt:   #6b7280;
+      --purple:     #6366f1;
+      --purple-bg:  #ede9fe;
+      --purple-txt: #4338ca;
+      --bg:         #f1f5f9;
+      --card:       #ffffff;
+      --text:       #0f172a;
+      --muted:      #64748b;
+      --border:     #e2e8f0;
+      --r:          16px;
+      --header-h:   76px;
+      --nav-h:      68px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 430px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      flex-shrink: 0;
+      background: var(--card);
+      padding: 48px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+    .header-eye   { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+    .header-title { font-size: 24px; font-weight: 800; }
+
+    /* ── APP SHELL ── */
+    #app {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── VIEWS ── */
+    .view {
+      display: none;
+      height: 100%;
+      flex-direction: column;
+    }
+    .view.active { display: flex; }
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav {
+      flex-shrink: 0;
+      display: flex;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .nav-btn {
+      flex: 1; border: none; background: none;
+      font-size: 10px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+      color: var(--muted); cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px; padding: 10px 8px; transition: color .15s;
+    }
+    .nav-btn svg    { width: 22px; height: 22px; }
+    .nav-btn.active { color: var(--purple); }
+
+    /* ── JDI BAR (Today) ── */
+    .jdi-bar {
+      flex-shrink: 0;
+      background: var(--purple-bg);
+      border-bottom: 1px solid #ddd6fe;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .jdi-bar-label {
+      flex: 1;
+      font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em;
+      color: var(--purple-txt);
+    }
+    .jdi-bar-label span {
+      display: block;
+      font-size: 11px; font-weight: 500;
+      text-transform: none; letter-spacing: 0;
+      color: var(--purple); margin-top: 1px;
+    }
+    .jdi-controls { display: flex; align-items: center; gap: 10px; }
+    .jdi-num {
+      font-size: 38px; font-weight: 900; color: var(--purple);
+      min-width: 48px; text-align: center; line-height: 1;
+    }
+    .jdi-btn {
+      border: none; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; transition: transform .1s;
+    }
+    .jdi-btn:active { transform: scale(.88); }
+    .jdi-minus { width: 38px; height: 38px; font-size: 20px; background: #c7d2fe; color: var(--purple-txt); }
+    .jdi-plus  { width: 48px; height: 48px; font-size: 26px; background: var(--purple); color: #fff;
+                 box-shadow: 0 3px 12px rgba(99,102,241,.4); }
+
+    /* ── TODAY SCROLL AREA ── */
+    .today-scroll {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 14px 14px 24px;
+    }
+
+    /* ── SUMMARY STRIP ── */
+    .summary-strip { display: flex; gap: 8px; margin-bottom: 6px; }
+    .s-pill { flex: 1; border-radius: 12px; padding: 10px 6px; text-align: center; }
+    .s-pill-num { font-size: 24px; font-weight: 800; line-height: 1; }
+    .s-pill-lbl { font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; margin-top: 2px; }
+    .sp-full   { background: var(--green-bg);  }
+    .sp-full   .s-pill-num, .sp-full .s-pill-lbl   { color: var(--green-txt); }
+    .sp-nz     { background: var(--orange-bg); }
+    .sp-nz     .s-pill-num, .sp-nz .s-pill-lbl     { color: var(--orange-txt); }
+    .sp-missed { background: var(--grey-bg);   }
+    .sp-missed .s-pill-num, .sp-missed .s-pill-lbl  { color: var(--grey-txt); }
+
+    .section-lbl {
+      font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--muted); margin: 16px 2px 9px;
+    }
+
+    .tap-hint { font-size: 12px; color: var(--muted); margin-bottom: 4px; text-align: center; }
+
+    /* ── HABIT CARD ── */
+    .habit-card {
+      background: var(--card);
+      border-radius: var(--r);
+      padding: 13px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      cursor: pointer;
+      border: 2.5px solid transparent;
+      transition: all .12s;
+      user-select: none;
+    }
+    .habit-card:active         { transform: scale(.98); }
+    .habit-card.s-full         { background: var(--green-bg);  border-color: var(--green);  }
+    .habit-card.s-never-zero   { background: var(--orange-bg); border-color: var(--orange); }
+    .habit-card.s-missed       { background: var(--grey-bg);   border-color: var(--grey); opacity: .75; }
+
+    .hc-icon  { font-size: 26px; width: 34px; text-align: center; flex-shrink: 0; padding-top: 1px; }
+    .hc-info  { flex: 1; min-width: 0; }  /* min-width:0 allows text to wrap */
+    .hc-name  { font-size: 15px; font-weight: 700; word-break: break-word; overflow-wrap: break-word; white-space: normal; line-height: 1.3; }
+    .hc-sub   { font-size: 11px; margin-top: 3px; color: var(--muted); }
+
+    .habit-card.s-full       .hc-sub { color: var(--green-txt); }
+    .habit-card.s-never-zero .hc-sub { color: var(--orange-txt); }
+    .habit-card.s-missed     .hc-sub { color: var(--grey-txt); }
+
+    .hc-badge {
+      width: 26px; height: 26px; border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800; color: #fff; flex-shrink: 0; margin-top: 3px;
+    }
+    .habit-card.s-full       .hc-badge { background: var(--green);  border-color: var(--green);  }
+    .habit-card.s-never-zero .hc-badge { background: var(--orange); border-color: var(--orange); }
+    .habit-card.s-missed     .hc-badge { background: var(--grey);   border-color: var(--grey);   }
+
+    /* ── CALENDAR VIEW ── */
+    .month-nav {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 18px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+    .month-nav-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: none; background: var(--bg);
+      font-size: 20px; cursor: pointer; color: var(--text);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .month-nav-btn:active { opacity: .6; }
+    .month-title { font-size: 16px; font-weight: 700; }
+
+    .cal-scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 14px 0 24px;
+    }
+
+    .cal-legend {
+      display: flex; gap: 14px; flex-wrap: wrap;
+      padding: 0 14px 12px;
+    }
+    .cal-leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+    .cal-leg-dot  { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+    /* calendar table wrapper */
+    .cal-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+
+    .cal-table { border-collapse: separate; border-spacing: 0; }
+
+    /* sticky first column */
+    .cal-label-cell {
+      position: sticky; left: 0; z-index: 10;
+      background: var(--bg);
+      padding: 0 8px 0 14px;
+      min-width: 76px; max-width: 76px;
+      vertical-align: middle;
+    }
+    .cal-label-inner {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 600; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 68px;
+    }
+    .cal-label-icon { font-size: 14px; flex-shrink: 0; }
+
+    /* day header row */
+    .cal-header-row th { padding-bottom: 4px; }
+    .cal-day-th {
+      width: 36px; min-width: 36px;
+      text-align: center; vertical-align: bottom;
+    }
+    .cal-day-num-hd { font-size: 11px; font-weight: 700; color: var(--muted); display: block; }
+    .cal-day-wd-hd  { font-size: 9px;  font-weight: 500; color: #cbd5e1; display: block; }
+    .cal-today-hd .cal-day-num-hd { color: var(--purple); }
+
+    /* data cells */
+    .cal-data-row td { padding: 2px; }
+    .cal-cell {
+      width: 30px; height: 30px; border-radius: 7px;
+      cursor: pointer; transition: transform .1s;
+      border: none; display: table-cell; vertical-align: middle; text-align: center;
+      position: relative;
+    }
+    .cal-cell:active { transform: scale(.85); }
+    .cal-cell.c-empty   { background: #f8fafc; border: 1.5px solid #e2e8f0; }
+    .cal-cell.c-full    { background: var(--green);  }
+    .cal-cell.c-nz      { background: var(--orange); }
+    .cal-cell.c-missed  { background: var(--grey);   }
+    .cal-cell.c-future  { background: transparent; cursor: default; border: 1.5px dashed #e2e8f0; opacity: .4; }
+    .cal-cell.c-today-highlight { outline: 2px solid var(--purple); outline-offset: 1px; }
+
+    /* JDI row in calendar */
+    .cal-jdi-row { background: var(--purple-bg); }
+    .cal-jdi-cell {
+      width: 30px; height: 30px; border-radius: 7px;
+      font-size: 11px; font-weight: 800; color: var(--purple-txt);
+      text-align: center; vertical-align: middle;
+      cursor: pointer;
+    }
+    .cal-jdi-cell.c-has-jdi { background: var(--purple); color: #fff; }
+    .cal-jdi-cell.c-future  { opacity: .3; cursor: default; }
+
+    /* ── EDIT MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 400;
+      background: rgba(15,23,42,.55);
+      display: flex; align-items: flex-end;
+      opacity: 0; pointer-events: none;
+      transition: opacity .22s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+
+    .modal-sheet {
+      background: var(--card);
+      border-radius: 24px 24px 0 0;
+      padding: 0 0 env(safe-area-inset-bottom, 16px);
+      width: 100%; max-width: 430px; margin: 0 auto;
+      transform: translateY(100%);
+      transition: transform .28s cubic-bezier(.32,1,.23,1);
+      max-height: 85vh;
+      display: flex; flex-direction: column;
+    }
+    .modal-overlay.open .modal-sheet { transform: translateY(0); }
+
+    .modal-handle { width: 40px; height: 4px; border-radius: 2px; background: #cbd5e1; margin: 12px auto 0; flex-shrink: 0; }
+    .modal-header { padding: 12px 20px 10px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+    .modal-date-title { font-size: 17px; font-weight: 800; }
+    .modal-date-sub   { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .modal-hint       { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    .modal-body { flex: 1; overflow-y: auto; padding: 12px 16px 8px; }
+
+    .modal-habit-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 14px; border-radius: 12px;
+      margin-bottom: 7px; cursor: pointer;
+      border: 2px solid transparent;
+      transition: all .12s; user-select: none;
+    }
+    .modal-habit-row:active            { transform: scale(.97); }
+    .modal-habit-row.s-full            { background: var(--green-bg);  border-color: var(--green);  }
+    .modal-habit-row.s-never-zero      { background: var(--orange-bg); border-color: var(--orange); }
+    .modal-habit-row.s-missed          { background: var(--grey-bg);   border-color: var(--grey); opacity: .8; }
+    .modal-habit-row:not([class*="s-"]) { background: var(--bg); }
+
+    .mhr-icon  { font-size: 22px; width: 30px; text-align: center; flex-shrink: 0; }
+    .mhr-name  { flex: 1; font-size: 14px; font-weight: 600; min-width: 0; word-break: break-word; }
+    .mhr-badge {
+      font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px;
+      flex-shrink: 0; white-space: nowrap;
+    }
+    .s-full       .mhr-badge { background: var(--green);  color: #fff; }
+    .s-never-zero .mhr-badge { background: var(--orange); color: #fff; }
+    .s-missed     .mhr-badge { background: var(--grey);   color: #fff; }
+
+    .modal-jdi-row {
+      margin: 4px 0 8px;
+      background: var(--purple-bg); border-radius: 12px;
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .mjdi-label { flex: 1; font-size: 13px; font-weight: 700; color: var(--purple-txt); }
+    .mjdi-controls { display: flex; align-items: center; gap: 8px; }
+    .mjdi-count { font-size: 24px; font-weight: 900; color: var(--purple); min-width: 36px; text-align: center; }
+    .mjdi-btn {
+      width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
+      font-size: 18px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+    }
+    .mjdi-minus { background: #c7d2fe; color: var(--purple-txt); }
+    .mjdi-plus  { background: var(--purple); color: #fff; }
+    .mjdi-btn:active { transform: scale(.88); }
+
+    .modal-footer { padding: 8px 16px 16px; flex-shrink: 0; }
+    .modal-done {
+      width: 100%; padding: 14px;
+      background: var(--purple); color: #fff;
+      border: none; border-radius: 13px;
+      font-size: 16px; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .modal-done:active { opacity: .88; }
+
+    /* ── SETTINGS VIEW ── */
+    .settings-scroll {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 14px 14px 30px;
+    }
+    .settings-row {
+      background: var(--card); border-radius: 13px;
+      padding: 13px 14px; margin-bottom: 7px;
+      display: flex; align-items: center; gap: 11px;
+    }
+    .settings-icon { font-size: 22px; width: 32px; text-align: center; flex-shrink: 0; }
+    .settings-name { flex: 1; font-size: 14px; font-weight: 600; min-width: 0; word-break: break-word; }
+    .del-btn {
+      width: 30px; height: 30px; border-radius: 50%; border: none;
+      background: #fee2e2; color: #ef4444;
+      font-size: 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .del-btn:active { transform: scale(.88); }
+
+    .add-form {
+      background: var(--card); border-radius: var(--r);
+      padding: 16px; margin-top: 12px;
+    }
+    .add-form-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 10px; }
+    .form-row { display: flex; gap: 8px; margin-bottom: 9px; }
+
+    .f-emoji {
+      flex: 0 0 46px; width: 46px;
+      padding: 11px 4px; text-align: center; font-size: 20px;
+      border: 2px solid var(--border); border-radius: 11px;
+      background: var(--bg); color: var(--text); outline: none; font-family: inherit;
+    }
+    .f-name {
+      flex: 1; min-width: 0;
+      padding: 11px 13px; font-size: 14px;
+      border: 2px solid var(--border); border-radius: 11px;
+      background: var(--bg); color: var(--text); outline: none; font-family: inherit;
+    }
+    .f-emoji:focus, .f-name:focus { border-color: var(--purple); }
+
+    .btn-add {
+      width: 100%; padding: 13px;
+      background: var(--purple); color: #fff;
+      border: none; border-radius: 12px;
+      font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .btn-add:active { opacity: .88; }
+
+    .legend-block { background: var(--card); border-radius: var(--r); padding: 16px; margin-top: 12px; }
+    .leg-item { display: flex; align-items: center; gap: 10px; font-size: 13px; padding: 5px 0; }
+    .leg-dot  { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+    /* ── EMPTY STATE ── */
+    .empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-eye" id="hEye"></div>
+    <div class="header-title" id="hTitle">Today</div>
+  </div>
+
+  <!-- APP -->
+  <div id="app">
+
+    <!-- TODAY VIEW -->
+    <div class="view active" id="view-today">
+      <div class="jdi-bar">
+        <div class="jdi-bar-label">
+          Just Do It
+          <span>no-procrastination wins today</span>
+        </div>
+        <div class="jdi-controls">
+          <button class="jdi-btn jdi-minus" onclick="adjJDI(-1)">−</button>
+          <div class="jdi-num" id="jdiNum">0</div>
+          <button class="jdi-btn jdi-plus"  onclick="adjJDI(1)">+</button>
+        </div>
+      </div>
+      <div class="today-scroll">
+        <div class="summary-strip" id="summaryStrip"></div>
+        <p class="tap-hint">Tap to cycle: Full → Never Zero → Missed → Clear</p>
+        <div class="section-lbl">Habits</div>
+        <div id="habitList"></div>
+      </div>
+    </div>
+
+    <!-- HISTORY / CALENDAR VIEW -->
+    <div class="view" id="view-history">
+      <div class="month-nav">
+        <button class="month-nav-btn" onclick="changeMonth(-1)">‹</button>
+        <div class="month-title" id="monthTitle"></div>
+        <button class="month-nav-btn" onclick="changeMonth(1)">›</button>
+      </div>
+      <div class="cal-scroll-area">
+        <div class="cal-legend">
+          <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--green)"></div>Full</div>
+          <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--orange)"></div>Never Zero</div>
+          <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--grey)"></div>Missed</div>
+          <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--purple)"></div>JDI</div>
+          <div class="cal-leg-item" style="color:#94a3b8;font-size:11px">Tap any day to edit</div>
+        </div>
+        <div class="cal-table-wrap">
+          <table class="cal-table" id="calTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS VIEW -->
+    <div class="view" id="view-settings">
+      <div class="settings-scroll">
+        <div class="section-lbl">My Habits</div>
+        <div id="settingsList"></div>
+        <div class="add-form">
+          <div class="add-form-title">Add Habit</div>
+          <div class="form-row">
+            <input class="f-emoji" id="fEmoji" type="text" placeholder="🎯" maxlength="2">
+            <input class="f-name"  id="fName"  type="text" placeholder="Habit name...">
+          </div>
+          <button class="btn-add" onclick="addHabit()">Add Habit</button>
+        </div>
+        <div class="legend-block">
+          <div class="section-lbl" style="margin:0 0 8px">Legend</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div><div><strong>Full</strong> — Completed in full</div></div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--orange)"></div><div><strong>Never Zero</strong> — Kept identity alive</div></div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--grey)"></div><div><strong>Missed</strong> — Didn't happen today</div></div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--purple)"></div><div><strong>Just Do It</strong> — No procrastination wins</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- #app -->
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-today"   onclick="go('today')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Today
+    </button>
+    <button class="nav-btn" id="nav-history" onclick="go('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Calendar
+    </button>
+    <button class="nav-btn" id="nav-settings" onclick="go('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
+  </nav>
+
+  <!-- EDIT MODAL -->
+  <div class="modal-overlay" id="editModal" onclick="handleOverlayClick(event)">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-date-title" id="modalDateTitle"></div>
+        <div class="modal-date-sub"   id="modalDateSub"></div>
+        <div class="modal-hint">Tap a habit to cycle its status</div>
+      </div>
+      <div class="modal-body">
+        <div id="modalHabits"></div>
+        <div class="modal-jdi-row">
+          <div class="mjdi-label">⚡ Just Do It</div>
+          <div class="mjdi-controls">
+            <button class="mjdi-btn mjdi-minus" onclick="adjModalJDI(-1)">−</button>
+            <div class="mjdi-count" id="modalJdiCount">0</div>
+            <button class="mjdi-btn mjdi-plus"  onclick="adjModalJDI(1)">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-done" onclick="closeModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ── DATA ────────────────────────────────────────────────────────────────────
+  const DEFAULT_HABITS = [
+    { id: 'h1', icon: '💪', name: 'Exercise' },
+    { id: 'h2', icon: '📖', name: 'Reading' },
+    { id: 'h3', icon: '🧘', name: 'Meditation' },
+    { id: 'h4', icon: '💧', name: 'Hydration' },
+  ];
+
+  const CYCLE = [null, 'full', 'never-zero', 'missed'];
+  const STATUS_LABEL = { full: 'Full', 'never-zero': 'Never Zero', missed: 'Missed' };
+  const STATUS_MARK  = { full: '✓', 'never-zero': '~', missed: '✕' };
+  const STATUS_SUB   = {
+    full:         'Full — Completed',
+    'never-zero': 'Never Zero — Identity kept',
+    missed:       'Missed',
+  };
+
+  let habits = load('habits', DEFAULT_HABITS);
+  let logs   = load('logs',   {});
+
+  // calendar state
+  const today = new Date();
+  let calYear  = today.getFullYear();
+  let calMonth = today.getMonth();
+
+  // modal state
+  let modalDateKey = null;
+
+  function load(k, fallback) {
+    try { return JSON.parse(localStorage.getItem(k)) ?? fallback; }
+    catch { return fallback; }
+  }
+  function persist() {
+    localStorage.setItem('habits', JSON.stringify(habits));
+    localStorage.setItem('logs',   JSON.stringify(logs));
+  }
+  function dateKey(y, m, d) {
+    return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  function todayKey() { return dateKey(today.getFullYear(), today.getMonth(), today.getDate()); }
+  function getLog(dk) {
+    if (!logs[dk]) logs[dk] = { habits: {}, jdi: 0 };
+    return logs[dk];
+  }
+
+  // ── NAVIGATION ──────────────────────────────────────────────────────────────
+  const VIEW_TITLES = { today: 'Today', history: 'Calendar', settings: 'Settings' };
+
+  function go(v) {
+    document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('view-' + v).classList.add('active');
+    document.getElementById('nav-' + v).classList.add('active');
+    document.getElementById('hTitle').textContent = VIEW_TITLES[v];
+    if (v === 'today')   renderToday();
+    if (v === 'history') renderCalendar();
+    if (v === 'settings') renderSettings();
+  }
+
+  // ── TODAY VIEW ──────────────────────────────────────────────────────────────
+  function renderToday() {
+    const log = getLog(todayKey());
+
+    // summary
+    let full = 0, nz = 0, missed = 0;
+    habits.forEach(h => {
+      const s = log.habits[h.id];
+      if (s === 'full') full++;
+      else if (s === 'never-zero') nz++;
+      else if (s === 'missed') missed++;
+    });
+    document.getElementById('summaryStrip').innerHTML = `
+      <div class="s-pill sp-full">
+        <div class="s-pill-num">${full}</div><div class="s-pill-lbl">Full</div>
+      </div>
+      <div class="s-pill sp-nz">
+        <div class="s-pill-num">${nz}</div><div class="s-pill-lbl">Never Zero</div>
+      </div>
+      <div class="s-pill sp-missed">
+        <div class="s-pill-num">${missed}</div><div class="s-pill-lbl">Missed</div>
+      </div>`;
+
+    // habits
+    const list = document.getElementById('habitList');
+    list.innerHTML = habits.length
+      ? habits.map(h => {
+          const s = log.habits[h.id] || null;
+          return `
+            <div class="habit-card ${s ? 's-'+s : ''}" onclick="cycleHabit('${h.id}')">
+              <div class="hc-icon">${h.icon}</div>
+              <div class="hc-info">
+                <div class="hc-name">${h.name}</div>
+                <div class="hc-sub">${s ? STATUS_SUB[s] : 'Not logged — tap to set'}</div>
+              </div>
+              <div class="hc-badge">${s ? STATUS_MARK[s] : ''}</div>
+            </div>`;
+        }).join('')
+      : '<div class="empty">No habits yet.<br>Add some in Settings.</div>';
+
+    // JDI
+    document.getElementById('jdiNum').textContent = log.jdi || 0;
+  }
+
+  function cycleHabit(id) {
+    const log = getLog(todayKey());
+    const cur  = log.habits[id] || null;
+    const next = CYCLE[(CYCLE.indexOf(cur) + 1) % CYCLE.length];
+    if (next === null) delete log.habits[id];
+    else log.habits[id] = next;
+    persist();
+    renderToday();
+  }
+
+  function adjJDI(delta) {
+    const log = getLog(todayKey());
+    log.jdi = Math.max(0, (log.jdi || 0) + delta);
+    persist();
+    document.getElementById('jdiNum').textContent = log.jdi;
+  }
+
+  // ── CALENDAR VIEW ───────────────────────────────────────────────────────────
+  function changeMonth(delta) {
+    calMonth += delta;
+    if (calMonth > 11) { calMonth = 0;  calYear++; }
+    if (calMonth < 0)  { calMonth = 11; calYear--; }
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const monthNames = ['January','February','March','April','May','June',
+                        'July','August','September','October','November','December'];
+    const dayLetters = ['S','M','T','W','T','F','S'];
+    document.getElementById('monthTitle').textContent = `${monthNames[calMonth]} ${calYear}`;
+
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const todK = todayKey();
+
+    const table = document.getElementById('calTable');
+    let html = '<thead><tr class="cal-header-row">';
+
+    // top-left corner
+    html += `<th class="cal-label-cell" style="background:var(--bg)"></th>`;
+
+    // day number + weekday headers
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dk   = dateKey(calYear, calMonth, d);
+      const dow  = new Date(calYear, calMonth, d).getDay();
+      const isTd = dk === todK;
+      html += `<th class="cal-day-th ${isTd ? 'cal-today-hd' : ''}">
+        <span class="cal-day-num-hd">${d}</span>
+        <span class="cal-day-wd-hd">${dayLetters[dow]}</span>
+      </th>`;
+    }
+    html += '</tr></thead><tbody>';
+
+    // one row per habit
+    habits.forEach(h => {
+      html += `<tr class="cal-data-row">
+        <td class="cal-label-cell">
+          <div class="cal-label-inner">
+            <span class="cal-label-icon">${h.icon}</span>
+            <span>${h.name}</span>
+          </div>
+        </td>`;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dk     = dateKey(calYear, calMonth, d);
+        const isFut  = dk > todK;
+        const s      = logs[dk]?.habits?.[h.id] || null;
+        const cls    = isFut ? 'c-future' : (s ? 'c-'+s.replace('never-zero','nz') : 'c-empty');
+        const tdCls  = dk === todK ? 'cal-cell-today' : '';
+        html += `<td style="padding:2px">
+          <div class="cal-cell ${cls} ${tdCls}" onclick="${isFut ? '' : `openModal('${dk}')`}" title="${dk}"></div>
+        </td>`;
+      }
+      html += '</tr>';
+    });
+
+    // JDI row
+    html += `<tr class="cal-data-row cal-jdi-row">
+      <td class="cal-label-cell" style="background:var(--purple-bg)">
+        <div class="cal-label-inner" style="color:var(--purple-txt)">
+          <span class="cal-label-icon">⚡</span><span>JDI</span>
+        </div>
+      </td>`;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dk    = dateKey(calYear, calMonth, d);
+      const isFut = dk > todK;
+      const jdi   = logs[dk]?.jdi || 0;
+      const cls   = isFut ? 'c-future' : (jdi > 0 ? 'c-has-jdi' : '');
+      html += `<td style="padding:2px">
+        <div class="cal-jdi-cell ${cls}" onclick="${isFut ? '' : `openModal('${dk}')`}">
+          ${!isFut && jdi > 0 ? jdi : (isFut ? '' : '·')}
+        </div>
+      </td>`;
+    }
+    html += '</tr></tbody>';
+    table.innerHTML = html;
+
+    // scroll to show today or end of month
+    const wrap = document.querySelector('.cal-table-wrap');
+    if (calYear === today.getFullYear() && calMonth === today.getMonth()) {
+      // scroll so today is visible (roughly centered)
+      const cellW = 36;
+      const d = today.getDate();
+      const offset = Math.max(0, (d - 4) * cellW);
+      setTimeout(() => { wrap.scrollLeft = offset; }, 50);
+    } else {
+      wrap.scrollLeft = 0;
+    }
+  }
+
+  // ── EDIT MODAL ──────────────────────────────────────────────────────────────
+  function openModal(dk) {
+    modalDateKey = dk;
+    const log = getLog(dk);
+    const d   = new Date(dk + 'T12:00:00');
+    const dayName = d.toLocaleDateString('en-AU', { weekday: 'long' });
+    const dateStr = d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    document.getElementById('modalDateTitle').textContent = dayName;
+    document.getElementById('modalDateSub').textContent   = dateStr;
+
+    renderModalHabits();
+    document.getElementById('modalJdiCount').textContent = log.jdi || 0;
+
+    const overlay = document.getElementById('editModal');
+    overlay.style.display = 'flex';
+    requestAnimationFrame(() => overlay.classList.add('open'));
+  }
+
+  function renderModalHabits() {
+    const log = getLog(modalDateKey);
+    document.getElementById('modalHabits').innerHTML = habits.map(h => {
+      const s = log.habits[h.id] || null;
+      return `
+        <div class="modal-habit-row ${s ? 's-'+s : ''}" onclick="cycleModalHabit('${h.id}')">
+          <div class="mhr-icon">${h.icon}</div>
+          <div class="mhr-name">${h.name}</div>
+          <div class="mhr-badge">${s ? STATUS_LABEL[s] : '—'}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function cycleModalHabit(id) {
+    const log = getLog(modalDateKey);
+    const cur  = log.habits[id] || null;
+    const next = CYCLE[(CYCLE.indexOf(cur) + 1) % CYCLE.length];
+    if (next === null) delete log.habits[id];
+    else log.habits[id] = next;
+    persist();
+    renderModalHabits();
+  }
+
+  function adjModalJDI(delta) {
+    const log = getLog(modalDateKey);
+    log.jdi = Math.max(0, (log.jdi || 0) + delta);
+    persist();
+    document.getElementById('modalJdiCount').textContent = log.jdi;
+  }
+
+  function closeModal() {
+    const overlay = document.getElementById('editModal');
+    overlay.classList.remove('open');
+    overlay.addEventListener('transitionend', () => {
+      overlay.style.display = 'none';
+      if (document.getElementById('view-history').classList.contains('active')) renderCalendar();
+      if (document.getElementById('view-today').classList.contains('active'))   renderToday();
+    }, { once: true });
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('editModal')) closeModal();
+  }
+
+  // ── SETTINGS VIEW ───────────────────────────────────────────────────────────
+  function renderSettings() {
+    document.getElementById('settingsList').innerHTML = habits.length
+      ? habits.map(h => `
+          <div class="settings-row">
+            <div class="settings-icon">${h.icon}</div>
+            <div class="settings-name">${h.name}</div>
+            <button class="del-btn" onclick="removeHabit('${h.id}')">×</button>
+          </div>`).join('')
+      : '<div class="empty">No habits yet.</div>';
+  }
+
+  function addHabit() {
+    const icon = document.getElementById('fEmoji').value.trim() || '🎯';
+    const name = document.getElementById('fName').value.trim();
+    if (!name) { document.getElementById('fName').focus(); return; }
+    habits.push({ id: 'h' + Date.now(), icon, name });
+    persist();
+    document.getElementById('fEmoji').value = '';
+    document.getElementById('fName').value  = '';
+    renderSettings();
+  }
+
+  function removeHabit(id) {
+    if (!confirm('Remove this habit?')) return;
+    habits = habits.filter(h => h.id !== id);
+    persist();
+    renderSettings();
+  }
+
+  // ── INIT ────────────────────────────────────────────────────────────────────
+  (function init() {
+    document.getElementById('hEye').textContent =
+      today.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    renderToday();
+
+    // register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  })();
+</script>
+</body>
+</html>

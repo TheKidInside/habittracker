@@ -538,7 +538,22 @@
 
     .record-hint { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 12px; }
 
-    .record-controls { display: flex; justify-content: center; margin-bottom: 14px; }
+    /* ── DATE PICKER ROW ── */
+    .date-row {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--bg); border: 2px solid var(--border);
+      border-radius: 12px; padding: 10px 14px;
+      margin-bottom: 12px;
+    }
+    .date-row label { font-size: 12px; font-weight: 700; color: var(--muted); flex-shrink: 0; }
+    .date-input {
+      flex: 1; border: none; background: transparent;
+      font-size: 14px; font-weight: 600; color: var(--text);
+      font-family: inherit; outline: none; cursor: pointer;
+    }
+
+    /* ── RECORD CONTROLS ── */
+    .record-controls { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 14px; }
     .record-btn {
       width: 72px; height: 72px; border-radius: 50%;
       border: none; cursor: pointer; font-size: 28px;
@@ -549,6 +564,16 @@
     }
     .record-btn:active { transform: scale(.92); }
     .record-btn.recording { animation: pulse-rec 1.2s infinite; }
+    .record-btn.paused { background: #f97316; box-shadow: 0 4px 16px rgba(249,115,22,.35); animation: none; }
+
+    .stop-btn {
+      width: 46px; height: 46px; border-radius: 50%;
+      border: none; cursor: pointer; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      background: #fee2e2; color: #ef4444;
+      transition: all .15s;
+    }
+    .stop-btn:active { transform: scale(.92); }
 
     @keyframes pulse-rec {
       0%,100% { box-shadow: 0 4px 16px rgba(239,68,68,.4); }
@@ -584,6 +609,29 @@
       font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
     }
     .del-entry-btn:active { opacity: .88; }
+
+    /* ── BACKUP / RESTORE ── */
+    .backup-block {
+      background: var(--card); border-radius: var(--r);
+      padding: 16px; margin-top: 12px;
+    }
+    .backup-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 10px; }
+    .backup-row { display: flex; gap: 8px; }
+    .btn-export {
+      flex: 1; padding: 13px;
+      background: #0f172a; color: #fff;
+      border: none; border-radius: 12px;
+      font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .btn-export:active { opacity: .85; }
+    .btn-import {
+      flex: 1; padding: 13px;
+      background: var(--bg); color: var(--text);
+      border: 2px solid var(--border); border-radius: 12px;
+      font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .btn-import:active { opacity: .85; }
+    .backup-hint { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
   </style>
 </head>
 <body>
@@ -660,6 +708,16 @@
           </div>
           <button class="btn-add" onclick="addHabit()">Add Habit</button>
         </div>
+        <div class="backup-block">
+          <div class="backup-title">Backup & Restore</div>
+          <div class="backup-row">
+            <button class="btn-export" onclick="exportBackup()">⬇ Export</button>
+            <button class="btn-import" onclick="document.getElementById('importFile').click()">⬆ Import</button>
+            <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)">
+          </div>
+          <div class="backup-hint">Export saves everything to your Files app. Import restores from a previous backup.</div>
+        </div>
+
         <div class="legend-block">
           <div class="section-lbl" style="margin:0 0 8px">Legend</div>
           <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div><div><strong>Full</strong> — Completed in full</div></div>
@@ -750,6 +808,10 @@
           <button class="lang-btn"        id="langFIL" onclick="setLang('fil-PH')">🇵🇭 FIL</button>
         </div>
         <div class="record-area">
+          <div class="date-row">
+            <label>Date</label>
+            <input type="date" class="date-input" id="entryDate">
+          </div>
           <textarea class="transcript-box" id="transcriptBox"
             placeholder="Your words will appear here as you speak, or just type directly..."
             rows="6"
@@ -757,6 +819,7 @@
           <div class="record-hint" id="recordHint">Tap the mic to start recording</div>
           <div class="record-controls">
             <button class="record-btn idle" id="recordBtn" onclick="toggleRecording()">🎙️</button>
+            <button class="stop-btn" id="stopBtn" onclick="stopRecording()" style="display:none" title="Stop">⏹</button>
           </div>
         </div>
         <div style="padding:0 16px 16px;flex-shrink:0">
@@ -1087,6 +1150,50 @@
     renderSettings();
   }
 
+  // ── BACKUP & RESTORE ────────────────────────────────────────────────────────
+  function exportBackup() {
+    const data = {
+      exported: new Date().toISOString().slice(0, 10),
+      version:  1,
+      habits:   habits,
+      logs:     logs,
+      journal:  journal,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `habits-backup-${data.exported}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.habits || !data.logs) { alert('Invalid backup file.'); return; }
+        if (!confirm('This will replace all current data with the backup. Continue?')) return;
+        habits  = data.habits;
+        logs    = data.logs;
+        journal = data.journal || [];
+        // Ensure locked journal habit is always present
+        if (!habits.find(h => h.id === 'h-journal')) habits.unshift(JOURNAL_HABIT);
+        persist();
+        localStorage.setItem('journal', JSON.stringify(journal));
+        renderSettings();
+        alert('Backup restored successfully.');
+      } catch {
+        alert('Could not read backup file. Make sure it is a valid backup.');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
   // ── JOURNAL ─────────────────────────────────────────────────────────────────
   const PROMPTS = [
     { emoji: '💭', text: 'What are you thinking?',         tag: 'ideas',      tagLabel: '#ideas'      },
@@ -1095,11 +1202,13 @@
     { emoji: '📅', text: 'Tell me something about today.', tag: 'log',        tagLabel: '#log'        },
   ];
 
-  let journal        = load('journal', []);
+  let journal         = load('journal', []);
   let activePromptIdx = null;
-  let currentLang    = 'en-US';
-  let recognition    = null;
-  let isRecording    = false;
+  let currentLang     = 'en-US';
+  let recognition     = null;
+  let isRecording     = false;
+  let isPaused        = false;
+  let baseText        = '';
   let currentDetailId = null;
 
   function renderJournal() {
@@ -1185,6 +1294,11 @@
     document.getElementById('recordHint').textContent    = 'Tap the mic to start recording';
     document.getElementById('recordBtn').className       = 'record-btn idle';
     document.getElementById('recordBtn').textContent     = '🎙️';
+    document.getElementById('stopBtn').style.display     = 'none';
+    document.getElementById('entryDate').value           = todayKey();
+    document.getElementById('entryDate').max             = todayKey();
+    baseText = '';
+    isPaused = false;
     showStep(2);
   }
 
@@ -1197,7 +1311,7 @@
   }
 
   function toggleRecording() {
-    if (isRecording) stopRecording();
+    if (isRecording) pauseRecording();
     else startRecording();
   }
 
@@ -1207,13 +1321,15 @@
       document.getElementById('recordHint').textContent = 'Speech not supported on this browser. Please type your entry.';
       return;
     }
+    // Sync baseText with whatever is in the box (handles manual edits while paused)
+    baseText = document.getElementById('transcriptBox').value;
+
     recognition = new SR();
     recognition.lang = currentLang;
     recognition.continuous = true;
     recognition.interimResults = true;
 
     const box = document.getElementById('transcriptBox');
-    let baseText = box.value;
 
     recognition.onresult = (e) => {
       let interim = '', finalChunk = '';
@@ -1235,10 +1351,28 @@
 
     recognition.start();
     isRecording = true;
-    document.getElementById('recordBtn').className   = 'record-btn recording';
-    document.getElementById('recordBtn').textContent = '⏹';
-    document.getElementById('recordHint').textContent = 'Listening… tap to stop';
+    isPaused    = false;
+    document.getElementById('recordBtn').className    = 'record-btn recording';
+    document.getElementById('recordBtn').textContent  = '⏸';
+    document.getElementById('stopBtn').style.display  = 'flex';
+    document.getElementById('recordHint').textContent = 'Recording… tap to pause';
     document.getElementById('transcriptBox').classList.add('listening');
+  }
+
+  function pauseRecording() {
+    if (recognition) {
+      recognition.onend = null;
+      try { recognition.stop(); } catch {}
+      recognition = null;
+    }
+    // Sync baseText so resume picks up clean text
+    baseText = document.getElementById('transcriptBox').value;
+    isRecording = false;
+    isPaused    = true;
+    document.getElementById('recordBtn').className    = 'record-btn paused';
+    document.getElementById('recordBtn').textContent  = '▶';
+    document.getElementById('recordHint').textContent = 'Paused — tap to resume';
+    document.getElementById('transcriptBox').classList.remove('listening');
   }
 
   function stopRecording() {
@@ -1248,8 +1382,12 @@
       recognition = null;
     }
     isRecording = false;
+    isPaused    = false;
+    baseText    = '';
     const btn = document.getElementById('recordBtn');
     if (btn) { btn.className = 'record-btn idle'; btn.textContent = '🎙️'; }
+    const stop = document.getElementById('stopBtn');
+    if (stop) stop.style.display = 'none';
     const hint = document.getElementById('recordHint');
     if (hint) hint.textContent = 'Tap the mic to start recording';
     const box = document.getElementById('transcriptBox');
@@ -1264,12 +1402,12 @@
   function saveEntry() {
     const content = document.getElementById('transcriptBox').value.trim();
     if (!content) return;
-    const p   = PROMPTS[activePromptIdx];
-    const now = new Date();
+    const p         = PROMPTS[activePromptIdx];
+    const entryDate = document.getElementById('entryDate').value || todayKey();
     const entry = {
       id:        'j' + Date.now(),
       timestamp: Date.now(),
-      date:      dateKey(now.getFullYear(), now.getMonth(), now.getDate()),
+      date:      entryDate,
       prompt:    p.text,
       tag:       p.tag,
       tagLabel:  p.tagLabel,
@@ -1279,11 +1417,12 @@
     journal.unshift(entry);
     localStorage.setItem('journal', JSON.stringify(journal));
 
-    // Auto-tick the Journal habit for today
-    const todayLog = getLog(todayKey());
-    todayLog.habits['h-journal'] = 'full';
+    // Auto-tick the Journal habit for the entry's date
+    const entryLog = getLog(entryDate);
+    entryLog.habits['h-journal'] = 'full';
     persist();
 
+    stopRecording();
     closeNewEntry();
     renderJournal();
   }

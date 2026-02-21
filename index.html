@@ -610,6 +610,149 @@
     }
     .del-entry-btn:active { opacity: .88; }
 
+    /* ── SEARCH / FILTER PANEL ── */
+    .journal-toolbar {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: flex-end;
+      padding: 8px 14px 0;
+    }
+    .search-toggle-btn {
+      background: var(--card); border: 2px solid var(--border);
+      border-radius: 20px; padding: 6px 14px;
+      font-size: 13px; font-weight: 700; color: var(--muted);
+      cursor: pointer; font-family: inherit; transition: all .12s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .search-toggle-btn.active { background: var(--purple-bg); border-color: var(--purple); color: var(--purple-txt); }
+    .search-toggle-btn:active { transform: scale(.96); }
+
+    .search-panel {
+      flex-shrink: 0;
+      padding: 10px 14px 6px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+    .search-input {
+      width: 100%; padding: 10px 14px;
+      border: 2px solid var(--border); border-radius: 11px;
+      background: var(--bg); color: var(--text);
+      font-size: 14px; font-family: inherit; outline: none;
+      margin-bottom: 10px;
+    }
+    .search-input:focus { border-color: var(--purple); }
+
+    .cat-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+    .cat-tab {
+      padding: 5px 12px; border-radius: 20px;
+      border: 2px solid var(--border);
+      background: var(--bg); color: var(--muted);
+      font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit;
+      transition: all .12s;
+    }
+    .cat-tab.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+
+    .tag-filter-chips { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 4px; min-height: 0; }
+    .filter-chip {
+      padding: 4px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 700; cursor: pointer;
+      border: 2px solid transparent; transition: all .12s;
+      opacity: .75;
+    }
+    .filter-chip.active { opacity: 1; border-color: currentColor; }
+    .filter-chip:active { transform: scale(.94); }
+
+    /* ── CUSTOM TAG PILLS ── */
+    .ctag-tags     { background: #dbeafe; color: #1d4ed8; }
+    .ctag-topics   { background: #ccfbf1; color: #0f766e; }
+    .ctag-people   { background: #fce7f3; color: #9d174d; }
+
+    .custom-tags-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 8px; min-height: 24px; }
+    .ctag-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px 3px 9px; border-radius: 20px;
+      font-size: 11px; font-weight: 700;
+    }
+    .ctag-remove {
+      background: none; border: none; cursor: pointer;
+      font-size: 13px; line-height: 1; padding: 0;
+      opacity: .6; font-family: inherit;
+    }
+    .ctag-remove:hover { opacity: 1; }
+
+    .add-tag-row {
+      display: flex; gap: 6px; align-items: center; margin-top: 8px;
+    }
+    .tag-cat-select {
+      padding: 7px 8px; border: 2px solid var(--border); border-radius: 10px;
+      background: var(--bg); color: var(--text);
+      font-size: 12px; font-weight: 700; font-family: inherit; outline: none;
+      cursor: pointer; flex-shrink: 0;
+    }
+    .tag-cat-select:focus { border-color: var(--purple); }
+    .tag-label-input {
+      flex: 1; min-width: 0; padding: 7px 11px;
+      border: 2px solid var(--border); border-radius: 10px;
+      background: var(--bg); color: var(--text);
+      font-size: 13px; font-family: inherit; outline: none;
+    }
+    .tag-label-input:focus { border-color: var(--purple); }
+    .tag-add-btn {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--purple); color: #fff;
+      border: none; font-size: 20px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .tag-add-btn:active { transform: scale(.88); }
+
+    .tags-section-lbl {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--muted); margin-top: 14px;
+    }
+
+    /* ── ENTRY DETAIL ACTIONS ── */
+    .detail-actions { display: flex; gap: 8px; margin-top: 16px; }
+    .edit-entry-btn {
+      padding: 12px 14px;
+      background: var(--bg); color: var(--text);
+      border: 2px solid var(--border); border-radius: 12px;
+      font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .edit-entry-btn:active { opacity: .85; }
+
+    /* ── EDIT MODE ── */
+    .edit-textarea {
+      width: 100%; min-height: 160px;
+      padding: 12px 14px; border: 2px solid var(--border); border-radius: 12px;
+      background: var(--bg); color: var(--text);
+      font-size: 15px; line-height: 1.65; font-family: inherit;
+      outline: none; resize: none;
+    }
+    .edit-textarea:focus { border-color: var(--purple); }
+    .edit-title-lbl { font-size: 11px; font-weight: 700; color: var(--muted); margin: 10px 0 4px; text-transform: uppercase; letter-spacing: .06em; }
+    .edit-title-input {
+      width: 100%; padding: 10px 13px;
+      border: 2px solid var(--border); border-radius: 11px;
+      background: var(--bg); color: var(--text);
+      font-size: 14px; font-weight: 600; font-family: inherit; outline: none;
+    }
+    .edit-title-input:focus { border-color: var(--purple); }
+    .edit-actions { display: flex; gap: 8px; margin-top: 14px; }
+    .save-edit-btn {
+      flex: 1; padding: 13px;
+      background: var(--purple); color: #fff;
+      border: none; border-radius: 12px;
+      font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .save-edit-btn:active { opacity: .88; }
+    .cancel-edit-btn {
+      padding: 13px 16px;
+      background: var(--bg); color: var(--muted);
+      border: 2px solid var(--border); border-radius: 12px;
+      font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .cancel-edit-btn:active { opacity: .85; }
+
     /* ── BACKUP / RESTORE ── */
     .backup-block {
       background: var(--card); border-radius: var(--r);
@@ -690,6 +833,19 @@
     <!-- JOURNAL VIEW -->
     <div class="view" id="view-journal">
       <div class="journal-view-wrap">
+        <div class="journal-toolbar">
+          <button class="search-toggle-btn" id="searchToggleBtn" onclick="toggleSearch()">🔍 Search & Filter</button>
+        </div>
+        <div class="search-panel" id="searchPanel" style="display:none">
+          <input type="text" class="search-input" id="searchInput" placeholder="Search… use * as wildcard" oninput="applyFilters()">
+          <div class="cat-tabs">
+            <button class="cat-tab active" onclick="setCatFilter('all')">All</button>
+            <button class="cat-tab" onclick="setCatFilter('tags')">Tags</button>
+            <button class="cat-tab" onclick="setCatFilter('topics')">Topics</button>
+            <button class="cat-tab" onclick="setCatFilter('people')">People</button>
+          </div>
+          <div class="tag-filter-chips" id="tagFilterChips"></div>
+        </div>
         <div class="journal-scroll" id="journalList"></div>
         <button class="journal-fab" onclick="openNewEntry()">✏️ New Entry</button>
       </div>
@@ -832,7 +988,7 @@
 
   <!-- ENTRY DETAIL MODAL -->
   <div class="modal-overlay" id="entryDetailModal" onclick="handleDetailOverlayClick(event)">
-    <div class="modal-sheet">
+    <div class="modal-sheet" style="max-height:92vh">
       <div class="modal-handle"></div>
       <div class="modal-header">
         <div class="detail-tag-wrap" id="detailTagWrap"></div>
@@ -840,11 +996,44 @@
         <div class="detail-meta"  id="detailMeta"></div>
       </div>
       <div class="modal-body">
-        <div class="detail-content" id="detailContent"></div>
-        <div class="detail-actions">
-          <button class="obsidian-btn"  onclick="exportToObsidian()">⬇ Save to Obsidian</button>
-          <button class="del-entry-btn" onclick="deleteEntry()">Delete</button>
+
+        <!-- VIEW MODE -->
+        <div id="entryViewMode">
+          <div class="detail-content" id="detailContent"></div>
+
+          <div class="tags-section-lbl">Tags</div>
+          <div class="custom-tags-row" id="customTagsRow"></div>
+          <div class="add-tag-row">
+            <select class="tag-cat-select" id="tagCatSelect">
+              <option value="tags">Tag</option>
+              <option value="topics">Topic</option>
+              <option value="people">Person</option>
+            </select>
+            <input class="tag-label-input" id="tagLabelInput" type="text"
+              placeholder="Add label…"
+              onkeydown="if(event.key==='Enter')addCustomTag()">
+            <button class="tag-add-btn" onclick="addCustomTag()">+</button>
+          </div>
+
+          <div class="detail-actions">
+            <button class="edit-entry-btn" onclick="enterEditMode()">✏️ Edit</button>
+            <button class="obsidian-btn"   onclick="exportToObsidian()">⬇ Obsidian</button>
+            <button class="del-entry-btn"  onclick="deleteEntry()">🗑</button>
+          </div>
         </div>
+
+        <!-- EDIT MODE -->
+        <div id="entryEditMode" style="display:none">
+          <div class="edit-title-lbl">Content</div>
+          <textarea class="edit-textarea" id="editTextarea"></textarea>
+          <div class="edit-title-lbl">Title</div>
+          <input class="edit-title-input" id="editTitleInput" type="text">
+          <div class="edit-actions">
+            <button class="save-edit-btn"   onclick="saveEdit()">Save Changes</button>
+            <button class="cancel-edit-btn" onclick="cancelEdit()">Cancel</button>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -1196,10 +1385,10 @@
 
   // ── JOURNAL ─────────────────────────────────────────────────────────────────
   const PROMPTS = [
-    { emoji: '💭', text: 'What are you thinking?',         tag: 'ideas',      tagLabel: '#ideas'      },
-    { emoji: '📚', text: 'What have you learned today?',   tag: 'lessons',    tagLabel: '#lessons'    },
-    { emoji: '💬', text: 'What happened?',                 tag: 'processing', tagLabel: '#processing' },
-    { emoji: '📅', text: 'Tell me something about today.', tag: 'log',        tagLabel: '#log'        },
+    { emoji: '💭', text: 'What are you thinking?',         tag: 'ideas',      tagLabel: '[ideas]'      },
+    { emoji: '📚', text: 'What have you learned today?',   tag: 'lessons',    tagLabel: '[lessons]'    },
+    { emoji: '💬', text: 'What happened?',                 tag: 'processing', tagLabel: '[processing]' },
+    { emoji: '📅', text: 'Tell me something about today.', tag: 'log',        tagLabel: '[log]'        },
   ];
 
   let journal         = load('journal', []);
@@ -1210,24 +1399,124 @@
   let isPaused        = false;
   let baseText        = '';
   let currentDetailId = null;
+  let filterText      = '';
+  let filterCategory  = 'all';
+  let filterTagLabel  = null;
+  let showSearch      = false;
+
+  function wildcardRegex(pattern) {
+    const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(escaped.replace(/\*/g, '.*'), 'i');
+  }
+
+  function allTagsFor(entry) {
+    return [
+      { label: entry.tagLabel, category: 'tags' },
+      ...(entry.customTags || []),
+    ];
+  }
+
+  function getFilteredEntries() {
+    let entries = [...journal].sort((a, b) => b.timestamp - a.timestamp);
+    if (filterText.trim()) {
+      try {
+        const rx = wildcardRegex(filterText.trim());
+        entries = entries.filter(e => rx.test(e.title) || rx.test(e.content));
+      } catch { /* invalid regex — skip */ }
+    }
+    if (filterTagLabel) {
+      entries = entries.filter(e => allTagsFor(e).some(t => {
+        const catMatch = filterCategory === 'all' || t.category === filterCategory;
+        return catMatch && t.label === filterTagLabel;
+      }));
+    } else if (filterCategory !== 'all') {
+      entries = entries.filter(e => (e.customTags || []).some(t => t.category === filterCategory));
+    }
+    return entries;
+  }
+
+  function renderTagFilterChips() {
+    const seen = new Set();
+    const chips = [];
+    journal.forEach(e => {
+      allTagsFor(e).forEach(t => {
+        if (filterCategory !== 'all' && t.category !== filterCategory) return;
+        if (!seen.has(t.label)) {
+          seen.add(t.label);
+          chips.push(t);
+        }
+      });
+    });
+    const container = document.getElementById('tagFilterChips');
+    if (!container) return;
+    container.innerHTML = chips.map(t => {
+      const cls   = `ctag-${t.category}`;
+      const active = filterTagLabel === t.label ? 'active' : '';
+      return `<span class="filter-chip ${cls} ${active}" onclick="setTagFilter('${escHtml(t.label)}')">${escHtml(t.label)}</span>`;
+    }).join('');
+  }
 
   function renderJournal() {
-    const list = document.getElementById('journalList');
+    renderTagFilterChips();
+    const list    = document.getElementById('journalList');
+    const entries = getFilteredEntries();
     if (!journal.length) {
       list.innerHTML = '<div class="empty">No entries yet.<br>Tap <strong>✏️ New Entry</strong> to start.</div>';
       return;
     }
-    const sorted = [...journal].sort((a, b) => b.timestamp - a.timestamp);
-    list.innerHTML = sorted.map(e => `
-      <div class="entry-card" onclick="openEntry('${e.id}')">
-        <div class="entry-card-top">
-          <span class="entry-tag-pill tag-${e.tag}">${e.tagLabel}</span>
-          <span class="entry-date">${formatEntryDate(e.date)}</span>
-        </div>
-        <div class="entry-title">${escHtml(e.title)}</div>
-        <div class="entry-preview">${escHtml(e.content)}</div>
-      </div>
-    `).join('');
+    if (!entries.length) {
+      list.innerHTML = '<div class="empty">No entries match your filters.</div>';
+      return;
+    }
+    list.innerHTML = entries.map(e => {
+      const customPills = (e.customTags || []).map(t =>
+        `<span class="entry-tag-pill ctag-${t.category}">${escHtml(t.label)}</span>`
+      ).join('');
+      return `
+        <div class="entry-card" onclick="openEntry('${e.id}')">
+          <div class="entry-card-top">
+            <span class="entry-tag-pill tag-${e.tag}">${escHtml(e.tagLabel)}</span>
+            ${customPills}
+            <span class="entry-date">${formatEntryDate(e.date)}</span>
+          </div>
+          <div class="entry-title">${escHtml(e.title)}</div>
+          <div class="entry-preview">${escHtml(e.content)}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── SEARCH & FILTER ─────────────────────────────────────────────────────────
+  function toggleSearch() {
+    showSearch = !showSearch;
+    const panel = document.getElementById('searchPanel');
+    const btn   = document.getElementById('searchToggleBtn');
+    panel.style.display = showSearch ? 'block' : 'none';
+    btn.classList.toggle('active', showSearch);
+    if (!showSearch) {
+      filterText = ''; filterTagLabel = null; filterCategory = 'all';
+      document.getElementById('searchInput').value = '';
+      document.querySelectorAll('.cat-tab').forEach((t,i) => t.classList.toggle('active', i===0));
+      renderJournal();
+    }
+  }
+
+  function applyFilters() {
+    filterText = document.getElementById('searchInput').value;
+    renderJournal();
+  }
+
+  function setCatFilter(cat) {
+    filterCategory = cat;
+    filterTagLabel = null;
+    document.querySelectorAll('.cat-tab').forEach(t => {
+      t.classList.toggle('active', t.textContent.toLowerCase() === cat || (cat === 'all' && t.textContent === 'All'));
+    });
+    renderJournal();
+  }
+
+  function setTagFilter(label) {
+    filterTagLabel = filterTagLabel === label ? null : label;
+    renderJournal();
   }
 
   function formatEntryDate(dateStr) {
@@ -1405,14 +1694,15 @@
     const p         = PROMPTS[activePromptIdx];
     const entryDate = document.getElementById('entryDate').value || todayKey();
     const entry = {
-      id:        'j' + Date.now(),
-      timestamp: Date.now(),
-      date:      entryDate,
-      prompt:    p.text,
-      tag:       p.tag,
-      tagLabel:  p.tagLabel,
-      title:     generateTitle(content),
+      id:         'j' + Date.now(),
+      timestamp:  Date.now(),
+      date:       entryDate,
+      prompt:     p.text,
+      tag:        p.tag,
+      tagLabel:   p.tagLabel,
+      title:      generateTitle(content),
       content,
+      customTags: [],
     };
     journal.unshift(entry);
     localStorage.setItem('journal', JSON.stringify(journal));
@@ -1433,11 +1723,16 @@
     if (!entry) return;
     currentDetailId = id;
 
+    document.getElementById('entryViewMode').style.display = '';
+    document.getElementById('entryEditMode').style.display = 'none';
+
     document.getElementById('detailTagWrap').innerHTML =
-      `<span class="entry-tag-pill tag-${entry.tag}">${entry.tagLabel}</span>`;
+      `<span class="entry-tag-pill tag-${entry.tag}">${escHtml(entry.tagLabel)}</span>`;
     document.getElementById('detailTitle').textContent   = entry.title;
     document.getElementById('detailMeta').textContent    = formatEntryDate(entry.date) + ' · ' + entry.prompt;
     document.getElementById('detailContent').textContent = entry.content;
+    document.getElementById('tagLabelInput').value = '';
+    renderDetailTags();
 
     const modal = document.getElementById('entryDetailModal');
     modal.style.display = 'flex';
@@ -1462,17 +1757,98 @@
     renderJournal();
   }
 
+  // ── TAG MANAGEMENT ──────────────────────────────────────────────────────────
+  function renderDetailTags() {
+    const entry = journal.find(e => e.id === currentDetailId);
+    if (!entry) return;
+    const row = document.getElementById('customTagsRow');
+    const tags = entry.customTags || [];
+    row.innerHTML = tags.length
+      ? tags.map((t, i) => `
+          <span class="ctag-pill ctag-${t.category}">
+            ${escHtml(t.label)}
+            <button class="ctag-remove" onclick="removeCustomTag(${i})">×</button>
+          </span>`).join('')
+      : '<span style="font-size:12px;color:var(--muted)">No custom tags yet</span>';
+  }
+
+  function addCustomTag() {
+    const label = document.getElementById('tagLabelInput').value.trim();
+    if (!label) return;
+    const cat   = document.getElementById('tagCatSelect').value;
+    const entry = journal.find(e => e.id === currentDetailId);
+    if (!entry) return;
+    if (!entry.customTags) entry.customTags = [];
+    if (entry.customTags.some(t => t.label === label)) {
+      document.getElementById('tagLabelInput').value = '';
+      return;
+    }
+    entry.customTags.push({ label, category: cat });
+    localStorage.setItem('journal', JSON.stringify(journal));
+    document.getElementById('tagLabelInput').value = '';
+    renderDetailTags();
+    renderJournal();
+  }
+
+  function removeCustomTag(idx) {
+    const entry = journal.find(e => e.id === currentDetailId);
+    if (!entry || !entry.customTags) return;
+    entry.customTags.splice(idx, 1);
+    localStorage.setItem('journal', JSON.stringify(journal));
+    renderDetailTags();
+    renderJournal();
+  }
+
+  // ── EDIT MODE ───────────────────────────────────────────────────────────────
+  function enterEditMode() {
+    const entry = journal.find(e => e.id === currentDetailId);
+    if (!entry) return;
+    document.getElementById('editTextarea').value   = entry.content;
+    document.getElementById('editTitleInput').value = entry.title;
+    document.getElementById('entryViewMode').style.display = 'none';
+    document.getElementById('entryEditMode').style.display = '';
+  }
+
+  function saveEdit() {
+    const content = document.getElementById('editTextarea').value.trim();
+    const title   = document.getElementById('editTitleInput').value.trim();
+    if (!content) return;
+    const entry = journal.find(e => e.id === currentDetailId);
+    if (!entry) return;
+    entry.content = content;
+    entry.title   = title || generateTitle(content);
+    localStorage.setItem('journal', JSON.stringify(journal));
+    // Refresh view mode
+    document.getElementById('detailContent').textContent = entry.content;
+    document.getElementById('detailTitle').textContent   = entry.title;
+    cancelEdit();
+    renderJournal();
+  }
+
+  function cancelEdit() {
+    document.getElementById('entryViewMode').style.display = '';
+    document.getElementById('entryEditMode').style.display = 'none';
+  }
+
+  // ── OBSIDIAN EXPORT ─────────────────────────────────────────────────────────
   function exportToObsidian() {
     const entry = journal.find(e => e.id === currentDetailId);
     if (!entry) return;
+    const customTags = (entry.customTags || []);
+    const tagLine    = [entry.tag, ...customTags.map(t => t.label)].join(', ');
+    const peopleLine = customTags.filter(t => t.category === 'people').map(t => t.label).join(', ');
+    const topicsLine = customTags.filter(t => t.category === 'topics').map(t => t.label).join(', ');
+    const inlineTags = [entry.tagLabel, ...customTags.map(t => `[${t.label}]`)].join(' ');
     const md =
 `---
 title: "${entry.title.replace(/"/g, "'")}"
 date: ${entry.date}
-tags: [${entry.tag}]
+tags: [${tagLine}]${peopleLine ? `\npeople: [${peopleLine}]` : ''}${topicsLine ? `\ntopics: [${topicsLine}]` : ''}
 prompt: "${entry.prompt}"
 source: Voice Journal
 ---
+
+${inlineTags}
 
 ${entry.content}
 `;

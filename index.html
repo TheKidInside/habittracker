@@ -582,6 +582,28 @@
     }
     .stop-btn:active { transform: scale(.92); }
 
+    .field-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .field-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); flex: 1; }
+    .field-mic-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: none; cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+      background: #ef4444; color: #fff;
+      transition: all .15s; flex-shrink: 0;
+    }
+    .field-mic-btn:active { transform: scale(.92); }
+    .field-mic-btn.recording { animation: pulse-rec 1.2s infinite; }
+    .field-mic-btn.paused { background: #f97316; animation: none; }
+    .title-input-box {
+      width: 100%; box-sizing: border-box;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 9px 12px; font-size: 15px; font-weight: 600;
+      background: var(--bg); color: var(--text);
+      outline: none; font-family: inherit; margin-bottom: 10px;
+    }
+    .title-input-box:focus { border-color: var(--purple); }
+    .title-input-box.listening { border-color: #ef4444; }
+
     @keyframes pulse-rec {
       0%,100% { box-shadow: 0 4px 16px rgba(239,68,68,.4); }
       50%      { box-shadow: 0 4px 28px rgba(239,68,68,.8); transform: scale(1.05); }
@@ -1032,13 +1054,22 @@
             <label>Date</label>
             <input type="date" class="date-input" id="entryDate">
           </div>
+          <div class="field-row">
+            <span class="field-lbl">Title</span>
+            <button class="field-mic-btn idle" id="titleMicBtn" onclick="toggleRecording('title')" title="Dictate title">🎙️</button>
+          </div>
+          <input class="title-input-box" id="titleInputBox" type="text"
+            placeholder="Entry title (or dictate)…">
+          <div class="field-row">
+            <span class="field-lbl">Content</span>
+            <button class="field-mic-btn idle" id="contentMicBtn" onclick="toggleRecording('content')" title="Dictate content">🎙️</button>
+          </div>
           <textarea class="transcript-box" id="transcriptBox"
             placeholder="Your words will appear here as you speak, or just type directly..."
-            rows="6"
+            rows="5"
             oninput="onTranscriptInput()"></textarea>
-          <div class="record-hint" id="recordHint">Tap the mic to start recording</div>
+          <div class="record-hint" id="recordHint">Tap a mic to start recording</div>
           <div class="record-controls">
-            <button class="record-btn idle" id="recordBtn" onclick="toggleRecording()">🎙️</button>
             <button class="stop-btn" id="stopBtn" onclick="stopRecording()" style="display:none" title="Stop">⏹</button>
           </div>
         </div>
@@ -1467,10 +1498,11 @@
   let journal         = load('journal', []);
   let activePromptIdx = null;
   let currentLang     = 'en-US';
-  let recognition     = null;
-  let isRecording     = false;
-  let isPaused        = false;
-  let baseText        = '';
+  let recognition          = null;
+  let isRecording          = false;
+  let isPaused             = false;
+  let baseText             = '';
+  let activeRecordTarget   = 'content'; // 'title' or 'content'
   let currentDetailId = null;
   let filterText      = '';
   let filterCategory  = 'all';
@@ -1755,10 +1787,13 @@ ${entry.content}
     document.getElementById('recordPrompt').textContent  = p.text;
     document.getElementById('step2Tag').textContent      = p.tagLabel;
     document.getElementById('transcriptBox').value       = '';
+    document.getElementById('titleInputBox').value       = '';
     document.getElementById('saveEntryBtn').disabled     = true;
-    document.getElementById('recordHint').textContent    = 'Tap the mic to start recording';
-    document.getElementById('recordBtn').className       = 'record-btn idle';
-    document.getElementById('recordBtn').textContent     = '🎙️';
+    document.getElementById('recordHint').textContent    = 'Tap a mic to start recording';
+    document.getElementById('titleMicBtn').className     = 'field-mic-btn idle';
+    document.getElementById('titleMicBtn').textContent   = '🎙️';
+    document.getElementById('contentMicBtn').className   = 'field-mic-btn idle';
+    document.getElementById('contentMicBtn').textContent = '🎙️';
     document.getElementById('stopBtn').style.display     = 'none';
     document.getElementById('entryDate').value           = todayKey();
     document.getElementById('entryDate').max             = todayKey();
@@ -1775,9 +1810,20 @@ ${entry.content}
     if (isRecording) { stopRecording(); setTimeout(startRecording, 300); }
   }
 
-  function toggleRecording() {
-    if (isRecording) pauseRecording();
-    else startRecording();
+  function toggleRecording(target) {
+    if (isRecording) {
+      if (activeRecordTarget === target) {
+        pauseRecording();
+      } else {
+        // Switch target: stop current then start new
+        stopRecording();
+        activeRecordTarget = target;
+        startRecording();
+      }
+    } else {
+      activeRecordTarget = target;
+      startRecording();
+    }
   }
 
   function startRecording() {
@@ -1786,15 +1832,16 @@ ${entry.content}
       document.getElementById('recordHint').textContent = 'Speech not supported on this browser. Please type your entry.';
       return;
     }
-    // Sync baseText with whatever is in the box (handles manual edits while paused)
-    baseText = document.getElementById('transcriptBox').value;
+    const isTitle  = activeRecordTarget === 'title';
+    const fieldEl  = document.getElementById(isTitle ? 'titleInputBox' : 'transcriptBox');
+    const micBtnId = isTitle ? 'titleMicBtn' : 'contentMicBtn';
+    // Sync baseText with whatever is in the field (handles manual edits while paused)
+    baseText = fieldEl.value;
 
     recognition = new SR();
     recognition.lang = currentLang;
     recognition.continuous = true;
     recognition.interimResults = true;
-
-    const box = document.getElementById('transcriptBox');
 
     recognition.onresult = (e) => {
       let interim = '', finalChunk = '';
@@ -1803,8 +1850,8 @@ ${entry.content}
         else interim += e.results[i][0].transcript;
       }
       baseText += finalChunk;
-      box.value = baseText + interim;
-      document.getElementById('saveEntryBtn').disabled = !box.value.trim();
+      fieldEl.value = baseText + interim;
+      updateSaveBtn();
     };
 
     recognition.onerror = (e) => {
@@ -1817,11 +1864,11 @@ ${entry.content}
     recognition.start();
     isRecording = true;
     isPaused    = false;
-    document.getElementById('recordBtn').className    = 'record-btn recording';
-    document.getElementById('recordBtn').textContent  = '⏸';
+    document.getElementById(micBtnId).className   = 'field-mic-btn recording';
+    document.getElementById(micBtnId).textContent = '⏸';
     document.getElementById('stopBtn').style.display  = 'flex';
-    document.getElementById('recordHint').textContent = 'Recording… tap to pause';
-    document.getElementById('transcriptBox').classList.add('listening');
+    document.getElementById('recordHint').textContent = 'Recording ' + (isTitle ? 'title' : 'content') + '… tap to pause';
+    fieldEl.classList.add('listening');
   }
 
   function pauseRecording() {
@@ -1830,14 +1877,17 @@ ${entry.content}
       try { recognition.stop(); } catch {}
       recognition = null;
     }
+    const isTitle  = activeRecordTarget === 'title';
+    const fieldEl  = document.getElementById(isTitle ? 'titleInputBox' : 'transcriptBox');
+    const micBtnId = isTitle ? 'titleMicBtn' : 'contentMicBtn';
     // Sync baseText so resume picks up clean text
-    baseText = document.getElementById('transcriptBox').value;
+    baseText = fieldEl.value;
     isRecording = false;
     isPaused    = true;
-    document.getElementById('recordBtn').className    = 'record-btn paused';
-    document.getElementById('recordBtn').textContent  = '▶';
+    document.getElementById(micBtnId).className   = 'field-mic-btn paused';
+    document.getElementById(micBtnId).textContent = '▶';
     document.getElementById('recordHint').textContent = 'Paused — tap to resume';
-    document.getElementById('transcriptBox').classList.remove('listening');
+    fieldEl.classList.remove('listening');
   }
 
   function stopRecording() {
@@ -1849,24 +1899,31 @@ ${entry.content}
     isRecording = false;
     isPaused    = false;
     baseText    = '';
-    const btn = document.getElementById('recordBtn');
-    if (btn) { btn.className = 'record-btn idle'; btn.textContent = '🎙️'; }
+    const titleBtn = document.getElementById('titleMicBtn');
+    if (titleBtn) { titleBtn.className = 'field-mic-btn idle'; titleBtn.textContent = '🎙️'; }
+    const contentBtn = document.getElementById('contentMicBtn');
+    if (contentBtn) { contentBtn.className = 'field-mic-btn idle'; contentBtn.textContent = '🎙️'; }
     const stop = document.getElementById('stopBtn');
     if (stop) stop.style.display = 'none';
     const hint = document.getElementById('recordHint');
-    if (hint) hint.textContent = 'Tap the mic to start recording';
+    if (hint) hint.textContent = 'Tap a mic to start recording';
     const box = document.getElementById('transcriptBox');
     if (box) box.classList.remove('listening');
+    const titleBox = document.getElementById('titleInputBox');
+    if (titleBox) titleBox.classList.remove('listening');
   }
 
-  function onTranscriptInput() {
-    const box = document.getElementById('transcriptBox');
-    document.getElementById('saveEntryBtn').disabled = !box.value.trim();
+  function updateSaveBtn() {
+    const content = document.getElementById('transcriptBox').value.trim();
+    document.getElementById('saveEntryBtn').disabled = !content;
   }
+
+  function onTranscriptInput() { updateSaveBtn(); }
 
   function saveEntry() {
-    const content = document.getElementById('transcriptBox').value.trim();
+    const content   = document.getElementById('transcriptBox').value.trim();
     if (!content) return;
+    const rawTitle  = document.getElementById('titleInputBox').value.trim();
     const p         = PROMPTS[activePromptIdx];
     const entryDate = document.getElementById('entryDate').value || todayKey();
     const entry = {
@@ -1876,7 +1933,7 @@ ${entry.content}
       prompt:     p.text,
       tag:        p.tag,
       tagLabel:   p.tagLabel,
-      title:      generateTitle(content),
+      title:      rawTitle || generateTitle(content),
       content,
       customTags: [],
     };

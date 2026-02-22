@@ -604,6 +604,25 @@
     .title-input-box:focus { border-color: var(--purple); }
     .title-input-box.listening { border-color: #ef4444; }
 
+    .tag-chips-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .entry-tag-chip {
+      padding: 5px 13px; border-radius: 20px;
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      border: 2px solid transparent;
+      transition: opacity .15s, border-color .15s;
+      opacity: 0.45;
+    }
+    .entry-tag-chip.active { opacity: 1; border-color: currentColor; }
+    .entry-tag-chip:active { transform: scale(.95); }
+    .prompt-input-box {
+      width: 100%; box-sizing: border-box;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 9px 12px; font-size: 14px; font-style: italic;
+      background: var(--bg); color: var(--text);
+      outline: none; font-family: inherit; margin-bottom: 12px;
+    }
+    .prompt-input-box:focus { border-color: var(--purple); }
+
     @keyframes pulse-rec {
       0%,100% { box-shadow: 0 4px 16px rgba(239,68,68,.4); }
       50%      { box-shadow: 0 4px 28px rgba(239,68,68,.8); transform: scale(1.05); }
@@ -1041,15 +1060,23 @@
       <div id="journalStep2" style="display:none;flex-direction:column;flex:1;overflow:hidden">
         <div class="step-header">
           <button class="step-back" onclick="showStep(1)">‹</button>
-          <div class="step-title" id="step2Tag"></div>
+          <div class="step-title">New Entry</div>
           <div class="step-spacer"></div>
         </div>
-        <div class="record-prompt" id="recordPrompt"></div>
         <div class="lang-toggle">
           <button class="lang-btn active" id="langEN"  onclick="setLang('en-US')">🇺🇸 EN</button>
           <button class="lang-btn"        id="langFIL" onclick="setLang('fil-PH')">🇵🇭 FIL</button>
         </div>
         <div class="record-area">
+          <div class="field-row">
+            <span class="field-lbl">Prompt</span>
+          </div>
+          <input class="prompt-input-box" id="entryPromptInput" type="text"
+            placeholder="What are you reflecting on? (optional)">
+          <div class="field-row">
+            <span class="field-lbl">Tag</span>
+          </div>
+          <div class="tag-chips-row" id="entryTagChips"></div>
           <div class="date-row">
             <label>Date</label>
             <input type="date" class="date-input" id="entryDate">
@@ -1488,11 +1515,18 @@
   }
 
   // ── JOURNAL ─────────────────────────────────────────────────────────────────
+  const TAGS = [
+    { id: 'ideas',      label: 'Ideas',      css: 'tag-ideas'      },
+    { id: 'lessons',    label: 'Lessons',    css: 'tag-lessons'    },
+    { id: 'processing', label: 'Processing', css: 'tag-processing' },
+    { id: 'log',        label: 'Log',        css: 'tag-log'        },
+  ];
+
   const PROMPTS = [
-    { emoji: '💭', text: 'What are you thinking?',         tag: 'ideas',      tagLabel: '[ideas]'      },
-    { emoji: '📚', text: 'What have you learned today?',   tag: 'lessons',    tagLabel: '[lessons]'    },
-    { emoji: '💬', text: 'What happened?',                 tag: 'processing', tagLabel: '[processing]' },
-    { emoji: '📅', text: 'Tell me something about today.', tag: 'log',        tagLabel: '[log]'        },
+    { emoji: '💭', text: 'What are you thinking?',         tag: 'ideas'      },
+    { emoji: '📚', text: 'What have you learned today?',   tag: 'lessons'    },
+    { emoji: '💬', text: 'What happened?',                 tag: 'processing' },
+    { emoji: '📅', text: 'Tell me something about today.', tag: 'log'        },
   ];
 
   let journal         = load('journal', []);
@@ -1503,6 +1537,7 @@
   let isPaused             = false;
   let baseText             = '';
   let activeRecordTarget   = 'content'; // 'title' or 'content'
+  let selectedTag          = null;      // tag id or null
   let currentDetailId = null;
   let filterText      = '';
   let filterCategory  = 'all';
@@ -1517,8 +1552,9 @@
   }
 
   function allTagsFor(entry) {
+    const baseTag = entry.tag || (entry.tagLabel ? entry.tagLabel.replace(/^\[|\]$/g, '') : null);
     return [
-      { label: entry.tagLabel, category: 'tags' },
+      ...(baseTag ? [{ label: baseTag, category: 'tags' }] : []),
       ...(entry.customTags || []),
     ];
   }
@@ -1593,7 +1629,7 @@
           ${checkHtml}
           <div ${innerStyle}>
             <div class="entry-card-top">
-              <span class="entry-tag-pill tag-${e.tag}">${escHtml(e.tagLabel)}</span>
+              ${e.tag ? `<span class="entry-tag-pill tag-${e.tag}">${escHtml(TAGS.find(t=>t.id===e.tag)?.label || e.tag)}</span>` : ''}
               ${customPills}
               <span class="entry-date">${formatEntryDate(e.date)}${exportedBadge}</span>
             </div>
@@ -1667,10 +1703,11 @@
 
   function generateMd(entry) {
     const customTags = (entry.customTags || []);
-    const tagLine    = [entry.tag, ...customTags.map(t => t.label)].join(', ');
+    const baseTag    = entry.tag || (entry.tagLabel ? entry.tagLabel.replace(/^\[|\]$/g, '') : null);
+    const tagLine    = [baseTag, ...customTags.map(t => t.label)].filter(Boolean).join(', ');
     const peopleLine = customTags.filter(t => t.category === 'people').map(t => t.label).join(', ');
     const topicsLine = customTags.filter(t => t.category === 'topics').map(t => t.label).join(', ');
-    const inlineTags = [entry.tagLabel, ...customTags.map(t => `[${t.label}]`)].join(' ');
+    const inlineTags = [baseTag ? `[${baseTag}]` : null, ...customTags.map(t => `[${t.label}]`)].filter(Boolean).join(' ');
     return `---
 title: "${entry.title.replace(/"/g, "'")}"
 date: ${entry.date}
@@ -1769,23 +1806,31 @@ ${entry.content}
 
     if (n === 1) {
       stopRecording();
-      document.getElementById('promptList').innerHTML = PROMPTS.map((p, i) => `
-        <div class="prompt-card" onclick="selectPrompt(${i})">
-          <div class="prompt-emoji">${p.emoji}</div>
+      const promptCards = PROMPTS.map((p, i) => {
+        const tagObj = TAGS.find(t => t.id === p.tag);
+        const tagDisplay = tagObj ? tagObj.label : p.tag;
+        return `
+          <div class="prompt-card" onclick="selectPrompt(${i})">
+            <div class="prompt-emoji">${p.emoji}</div>
+            <div>
+              <div class="prompt-text">${p.text}</div>
+              <div class="prompt-tag">${tagDisplay}</div>
+            </div>
+          </div>`;
+      });
+      const customCard = `
+        <div class="prompt-card" onclick="selectBlankEntry()">
+          <div class="prompt-emoji">✍️</div>
           <div>
-            <div class="prompt-text">${p.text}</div>
-            <div class="prompt-tag">${p.tagLabel}</div>
+            <div class="prompt-text">Custom entry</div>
+            <div class="prompt-tag">Write your own prompt · tag optional</div>
           </div>
-        </div>
-      `).join('');
+        </div>`;
+      document.getElementById('promptList').innerHTML = [...promptCards, customCard].join('');
     }
   }
 
-  function selectPrompt(idx) {
-    activePromptIdx = idx;
-    const p = PROMPTS[idx];
-    document.getElementById('recordPrompt').textContent  = p.text;
-    document.getElementById('step2Tag').textContent      = p.tagLabel;
+  function resetStep2Fields() {
     document.getElementById('transcriptBox').value       = '';
     document.getElementById('titleInputBox').value       = '';
     document.getElementById('saveEntryBtn').disabled     = true;
@@ -1799,6 +1844,36 @@ ${entry.content}
     document.getElementById('entryDate').max             = todayKey();
     baseText = '';
     isPaused = false;
+  }
+
+  function renderEntryTagChips() {
+    document.getElementById('entryTagChips').innerHTML = TAGS.map(t =>
+      `<span class="entry-tag-chip ${t.css}${selectedTag === t.id ? ' active' : ''}"
+        onclick="selectEntryTag('${t.id}')">${t.label}</span>`
+    ).join('');
+  }
+
+  function selectEntryTag(tagId) {
+    selectedTag = selectedTag === tagId ? null : tagId;
+    renderEntryTagChips();
+  }
+
+  function selectPrompt(idx) {
+    activePromptIdx = idx;
+    const p = PROMPTS[idx];
+    selectedTag = p.tag;
+    document.getElementById('entryPromptInput').value = p.text;
+    resetStep2Fields();
+    renderEntryTagChips();
+    showStep(2);
+  }
+
+  function selectBlankEntry() {
+    activePromptIdx = null;
+    selectedTag = null;
+    document.getElementById('entryPromptInput').value = '';
+    resetStep2Fields();
+    renderEntryTagChips();
     showStep(2);
   }
 
@@ -1924,15 +1999,14 @@ ${entry.content}
     const content   = document.getElementById('transcriptBox').value.trim();
     if (!content) return;
     const rawTitle  = document.getElementById('titleInputBox').value.trim();
-    const p         = PROMPTS[activePromptIdx];
     const entryDate = document.getElementById('entryDate').value || todayKey();
+    const entryPrompt = document.getElementById('entryPromptInput').value.trim();
     const entry = {
       id:         'j' + Date.now(),
       timestamp:  Date.now(),
       date:       entryDate,
-      prompt:     p.text,
-      tag:        p.tag,
-      tagLabel:   p.tagLabel,
+      prompt:     entryPrompt,
+      tag:        selectedTag,
       title:      rawTitle || generateTitle(content),
       content,
       customTags: [],
@@ -1959,8 +2033,10 @@ ${entry.content}
     document.getElementById('entryViewMode').style.display = '';
     document.getElementById('entryEditMode').style.display = 'none';
 
-    document.getElementById('detailTagWrap').innerHTML =
-      `<span class="entry-tag-pill tag-${entry.tag}">${escHtml(entry.tagLabel)}</span>`;
+    const tagObj = TAGS.find(t => t.id === entry.tag);
+    const tagDisplay = tagObj ? tagObj.label : (entry.tag || '');
+    document.getElementById('detailTagWrap').innerHTML = entry.tag
+      ? `<span class="entry-tag-pill tag-${entry.tag}">${escHtml(tagDisplay)}</span>` : '';
     document.getElementById('detailTitle').textContent   = entry.title;
     document.getElementById('detailMeta').textContent    = formatEntryDate(entry.date) + ' · ' + entry.prompt;
     document.getElementById('detailContent').textContent = entry.content;

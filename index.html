@@ -1073,10 +1073,21 @@
           </div>
           <input class="prompt-input-box" id="entryPromptInput" type="text"
             placeholder="What are you reflecting on? (optional)">
-          <div class="field-row">
-            <span class="field-lbl">Tag</span>
+          <div class="field-row" style="margin-bottom:4px">
+            <span class="field-lbl">Tags</span>
           </div>
-          <div class="tag-chips-row" id="entryTagChips"></div>
+          <div class="custom-tags-row" id="creationTagsRow"></div>
+          <div class="add-tag-row" style="margin-bottom:12px">
+            <select class="tag-cat-select" id="creationTagCat">
+              <option value="tags">Tag</option>
+              <option value="topics">Topics</option>
+              <option value="people">People</option>
+            </select>
+            <input class="tag-label-input" id="creationTagLabel" type="text"
+              placeholder="Tag name…"
+              onkeydown="if(event.key==='Enter')addCreationTag()">
+            <button class="tag-add-btn" onclick="addCreationTag()">+</button>
+          </div>
           <div class="date-row">
             <label>Date</label>
             <input type="date" class="date-input" id="entryDate">
@@ -1523,10 +1534,11 @@
   ];
 
   const PROMPTS = [
-    { emoji: '💭', text: 'What are you thinking?',         tag: 'ideas'      },
-    { emoji: '📚', text: 'What have you learned today?',   tag: 'lessons'    },
-    { emoji: '💬', text: 'What happened?',                 tag: 'processing' },
-    { emoji: '📅', text: 'Tell me something about today.', tag: 'log'        },
+    { emoji: '💭', text: 'What are you thinking?',                    tag: 'ideas'      },
+    { emoji: '📚', text: 'What have you learned today?',              tag: 'lessons'    },
+    { emoji: '💬', text: 'What happened?',                            tag: 'processing' },
+    { emoji: '📅', text: 'Tell me something about today.',            tag: 'log'        },
+    { emoji: '⭐', text: "What's the best thing that happened today?", tag: 'log'        },
   ];
 
   let journal         = load('journal', []);
@@ -1537,7 +1549,7 @@
   let isPaused             = false;
   let baseText             = '';
   let activeRecordTarget   = 'content'; // 'title' or 'content'
-  let selectedTag          = null;      // tag id or null
+  let creationTags         = [];        // tags added during entry creation
   let currentDetailId = null;
   let filterText      = '';
   let filterCategory  = 'all';
@@ -1831,6 +1843,9 @@ ${entry.content}
   }
 
   function resetStep2Fields() {
+    creationTags = [];
+    document.getElementById('creationTagsRow').innerHTML = '';
+    document.getElementById('creationTagLabel').value    = '';
     document.getElementById('transcriptBox').value       = '';
     document.getElementById('titleInputBox').value       = '';
     document.getElementById('saveEntryBtn').disabled     = true;
@@ -1846,34 +1861,51 @@ ${entry.content}
     isPaused = false;
   }
 
-  function renderEntryTagChips() {
-    document.getElementById('entryTagChips').innerHTML = TAGS.map(t =>
-      `<span class="entry-tag-chip ${t.css}${selectedTag === t.id ? ' active' : ''}"
-        onclick="selectEntryTag('${t.id}')">${t.label}</span>`
+  function renderCreationTags() {
+    const row = document.getElementById('creationTagsRow');
+    row.innerHTML = creationTags.map((t, i) =>
+      `<span class="ctag-pill ctag-${t.category}">
+        ${escHtml(t.label)}
+        <button class="ctag-remove" onclick="removeCreationTag(${i})">×</button>
+      </span>`
     ).join('');
   }
 
-  function selectEntryTag(tagId) {
-    selectedTag = selectedTag === tagId ? null : tagId;
-    renderEntryTagChips();
+  function addCreationTag() {
+    const label = document.getElementById('creationTagLabel').value.trim();
+    if (!label) return;
+    const cat = document.getElementById('creationTagCat').value;
+    if (creationTags.some(t => t.label === label && t.category === cat)) {
+      document.getElementById('creationTagLabel').value = '';
+      return;
+    }
+    creationTags.push({ label, category: cat });
+    document.getElementById('creationTagLabel').value = '';
+    renderCreationTags();
+  }
+
+  function removeCreationTag(idx) {
+    creationTags.splice(idx, 1);
+    renderCreationTags();
   }
 
   function selectPrompt(idx) {
     activePromptIdx = idx;
     const p = PROMPTS[idx];
-    selectedTag = p.tag;
     document.getElementById('entryPromptInput').value = p.text;
     resetStep2Fields();
-    renderEntryTagChips();
+    // Pre-add the prompt's standard tag
+    if (p.tag) {
+      creationTags.push({ label: p.tag, category: 'tags' });
+      renderCreationTags();
+    }
     showStep(2);
   }
 
   function selectBlankEntry() {
     activePromptIdx = null;
-    selectedTag = null;
     document.getElementById('entryPromptInput').value = '';
     resetStep2Fields();
-    renderEntryTagChips();
     showStep(2);
   }
 
@@ -2001,15 +2033,17 @@ ${entry.content}
     const rawTitle  = document.getElementById('titleInputBox').value.trim();
     const entryDate = document.getElementById('entryDate').value || todayKey();
     const entryPrompt = document.getElementById('entryPromptInput').value.trim();
+    const stdTagIds   = TAGS.map(t => t.id);
+    const stdTagEntry = creationTags.find(t => t.category === 'tags' && stdTagIds.includes(t.label.toLowerCase()));
     const entry = {
       id:         'j' + Date.now(),
       timestamp:  Date.now(),
       date:       entryDate,
       prompt:     entryPrompt,
-      tag:        selectedTag,
+      tag:        stdTagEntry ? stdTagEntry.label.toLowerCase() : null,
       title:      rawTitle || generateTitle(content),
       content,
-      customTags: [],
+      customTags: stdTagEntry ? creationTags.filter(t => t !== stdTagEntry) : [...creationTags],
     };
     journal.unshift(entry);
     localStorage.setItem('journal', JSON.stringify(journal));

@@ -2460,17 +2460,12 @@ ${entry.content}
     if (!clientId) { alert('Please enter your Azure App Client ID first.'); return; }
     localStorage.setItem('ms_client_id', clientId);
     initMsal(clientId);
-    try {
-      await msalApp.loginPopup({ scopes: ['Tasks.ReadWrite', 'User.Read'] });
-      await afterMsLogin();
-    } catch (e) {
-      console.error('Login error', e);
-      alert('Sign-in failed: ' + (e.message || e));
-    }
+    // Redirect flow — page navigates to Microsoft then comes back
+    await msalApp.loginRedirect({ scopes: ['Tasks.ReadWrite', 'User.Read'] });
   }
 
   function msLogout() {
-    if (msalApp) msalApp.logoutPopup().catch(() => {});
+    if (msalApp) msalApp.logoutRedirect().catch(() => {});
     todoCache = { lists: [], updatedAt: null };
     showTodosAuthScreen();
   }
@@ -2483,8 +2478,9 @@ ${entry.content}
       const res = await msalApp.acquireTokenSilent(req);
       return res.accessToken;
     } catch {
-      const res = await msalApp.acquireTokenPopup(req);
-      return res.accessToken;
+      // Silent failed — redirect for interactive auth (page will return via handleRedirectPromise)
+      await msalApp.acquireTokenRedirect(req);
+      throw new Error('Redirecting for auth');
     }
   }
 
@@ -2755,18 +2751,31 @@ ${entry.content}
     const clientId = getMsClientId();
     if (!clientId) { showTodosAuthScreen(); return; }
     initMsal(clientId);
-    try { await msalApp.handleRedirectPromise(); } catch { /* ignore */ }
+
+    // Must be called on every page load — captures the token after a redirect login
+    let redirectResult = null;
+    try { redirectResult = await msalApp.handleRedirectPromise(); } catch { /* ignore */ }
+
     const accounts = msalApp.getAllAccounts();
     if (!accounts.length) { showTodosAuthScreen(); return; }
-    // Restore user info from cached account
+
+    // Set user info
     const acc = accounts[0];
     document.getElementById('todosUserName').textContent = (acc.name || acc.username || '').split(' ')[0];
     document.getElementById('todosAvatar').textContent   = (acc.name || acc.username || '?')[0].toUpperCase();
-    // Restore task cache
+
+    // Restore cached tasks so the view isn't blank
     try {
       const cached = JSON.parse(localStorage.getItem('todo_cache'));
       if (cached?.lists?.length) todoCache = cached;
     } catch { /* ignore */ }
+
+    // If we just returned from a login redirect, sync immediately
+    if (redirectResult) {
+      showTodosMain();
+      renderTodos();
+      await syncTodos();
+    }
   }
 
   // ── INIT ────────────────────────────────────────────────────────────────────

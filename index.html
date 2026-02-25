@@ -1094,7 +1094,63 @@
       font-size: 16px; color: #d1d5db; padding: 0; line-height: 1;
     }
     .todo-star-btn.starred { color: #f59e0b; }
-    .todo-star-btn:active { transform: scale(.8); }
+    .todo-star-btn:active  { transform: scale(.8); }
+
+    .todo-del-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 18px; color: #d1d5db; padding: 0; line-height: 1; font-weight: 300;
+    }
+    .todo-del-btn:active { color: #ef4444; transform: scale(.85); }
+
+    .todo-sync-banner {
+      background: #eff6ff; border-radius: 10px;
+      padding: 10px 14px; margin-bottom: 12px;
+      font-size: 12px; color: #1d4ed8; font-weight: 600;
+      cursor: pointer; text-align: center;
+    }
+    .todo-sync-banner:active { opacity: .8; }
+
+    .todo-fab {
+      position: absolute; bottom: 18px; right: 18px;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: #0078d4; color: #fff;
+      border: none; font-size: 28px; font-weight: 300;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(0,120,212,.4);
+      z-index: 10;
+    }
+    .todo-fab:active { transform: scale(.92); }
+
+    /* new task modal */
+    .ntask-field-lbl {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--muted); margin: 12px 0 6px;
+    }
+    .ntask-date-input {
+      width: 100%; padding: 10px 12px;
+      border: 2px solid var(--border); border-radius: 10px;
+      background: var(--bg); color: var(--text);
+      font-size: 14px; font-family: inherit; outline: none;
+    }
+    .ntask-date-input:focus { border-color: #0078d4; }
+    .ntask-list-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ntask-list-pill {
+      padding: 6px 14px; border-radius: 20px;
+      border: 2px solid var(--border);
+      background: var(--bg); color: var(--muted);
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      font-family: inherit; transition: all .12s;
+    }
+    .ntask-list-pill.active { background: #0078d4; color: #fff; border-color: #0078d4; }
+    .ntask-list-pill:active { transform: scale(.95); }
+    .ntask-star-row {
+      display: flex; align-items: center; gap: 10px; margin-top: 14px;
+    }
+    .ntask-star-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 26px; color: #d1d5db; padding: 0; line-height: 1;
+    }
+    .ntask-star-btn.starred { color: #f59e0b; }
   </style>
 </head>
 <body>
@@ -1218,28 +1274,43 @@
     </div>
 
     <!-- TODOS VIEW -->
-    <div class="view" id="view-todos">
-
-      <!-- Not connected -->
-      <div class="todos-not-connected" id="todosNotConnected" style="display:none">
-        <div class="todos-nc-icon">✅</div>
-        <div class="todos-nc-title">Microsoft To Do</div>
-        <div class="todos-nc-sub">Connect your account in Settings to sync your tasks.</div>
-        <button class="todos-nc-btn" onclick="go('settings')">Go to Settings →</button>
-      </div>
-
-      <!-- Main (shown when signed in) -->
-      <div id="todosMain" style="display:none">
+    <div class="view" id="view-todos" style="position:relative">
+      <div id="todosMain" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
         <div class="todos-toolbar">
           <button class="todos-filter-btn active" id="tfAll"       onclick="setTodoFilter('all')">All</button>
           <button class="todos-filter-btn"        id="tfToday"     onclick="setTodoFilter('today')">My Day</button>
           <button class="todos-filter-btn"        id="tfImportant" onclick="setTodoFilter('important')">★</button>
-          <button class="todos-sync-btn" id="todosSyncBtn" onclick="syncTodos()" title="Sync">↻</button>
+          <button class="todos-sync-btn" id="todosSyncBtn" onclick="syncTodos()" title="Sync" style="display:none">↻</button>
         </div>
         <div class="todos-scroll" id="todosList"></div>
       </div>
-
+      <button class="todo-fab" onclick="openNewTask()">+</button>
     </div>
+
+  <!-- NEW TASK MODAL -->
+  <div class="modal-overlay" id="newTaskModal" onclick="handleNewTaskOverlay(event)">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-date-title">New Task</div>
+      </div>
+      <div class="modal-body">
+        <input class="title-input-box" id="newTaskTitle" type="text" placeholder="Task title…"
+          onkeydown="if(event.key==='Enter')submitNewTask()">
+        <div class="ntask-field-lbl">Due date (optional)</div>
+        <input type="date" class="ntask-date-input" id="newTaskDue">
+        <div class="ntask-field-lbl">List</div>
+        <div class="ntask-list-pills" id="newTaskListPills"></div>
+        <div class="ntask-star-row">
+          <button class="ntask-star-btn" id="newTaskStar" onclick="toggleNewTaskStar()">★</button>
+          <span style="font-size:13px;color:var(--muted)">Mark as important</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-done" onclick="submitNewTask()">Add Task</button>
+      </div>
+    </div>
+  </div>
 
   </div><!-- #app -->
 
@@ -2501,8 +2572,27 @@ ${entry.content}
   let msalApp      = null;
   let todoFilter   = 'all';
   let todoCache    = { lists: [], updatedAt: null };
-  let collapsedLists = new Set(); // list IDs that are collapsed (default = expanded)
-  let togglingTasks  = new Set(); // debounce double-taps
+  let collapsedLists  = new Set();
+  let togglingTasks   = new Set();
+  let newTaskListId   = null;
+  let newTaskStarred  = false;
+
+  // Local task store — works offline, no MS needed
+  let todoLists = load('todoLists', [
+    { id: 'local-default', displayName: 'Tasks', tasks: [] }
+  ]);
+
+  function getActiveLists() {
+    return isTodoConnected() ? todoCache.lists : todoLists;
+  }
+
+  function persistActiveLists() {
+    if (isTodoConnected()) {
+      localStorage.setItem('todo_cache', JSON.stringify(todoCache));
+    } else {
+      localStorage.setItem('todoLists', JSON.stringify(todoLists));
+    }
+  }
 
   const MS_CLIENT_ID_DEFAULT = '53b399c3-2c57-493e-8619-8fe43fac575b';
 
@@ -2580,16 +2670,30 @@ ${entry.content}
       headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    if (!r.ok) throw new Error('Graph ' + r.status);
+    if (!r.ok) throw new Error('Graph PATCH ' + r.status);
+  }
+
+  async function graphPost(path, token, body) {
+    const r = await fetch('https://graph.microsoft.com/v1.0' + path, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) throw new Error('Graph POST ' + r.status);
+    return r.json();
+  }
+
+  async function graphDelete(path, token) {
+    const r = await fetch('https://graph.microsoft.com/v1.0' + path, {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer ' + token },
+    });
+    if (!r.ok) throw new Error('Graph DELETE ' + r.status);
   }
 
   async function afterMsLogin() {
     const accounts = msalApp.getAllAccounts();
     if (!accounts.length) return;
-    const acc = accounts[0];
-    document.getElementById('todosUserName').textContent = (acc.name || acc.username || '').split(' ')[0];
-    document.getElementById('todosAvatar').textContent   = (acc.name || acc.username || '?')[0].toUpperCase();
-    showTodosMain();
     // Restore cache immediately, then sync in background
     try {
       const cached = JSON.parse(localStorage.getItem('todo_cache'));
@@ -2598,28 +2702,148 @@ ${entry.content}
     await syncTodos();
   }
 
-  function showTodosMain() {
-    const m = document.getElementById('todosMain');
-    m.style.display       = 'flex';
-    m.style.flexDirection = 'column';
-    m.style.flex          = '1';
-    m.style.overflow      = 'hidden';
+  // ── LOCAL + MS CRUD ─────────────────────────────────────────────────────────
+
+  async function addTodoTask(listId, title, dueDate, importance) {
+    if (!title.trim()) return;
+    const task = {
+      id:             'lt-' + Date.now(),
+      title:          title.trim(),
+      status:         'notStarted',
+      importance:     importance || 'normal',
+      dueDateTime:    dueDate ? { dateTime: dueDate + 'T00:00:00' } : null,
+      checklistItems: [],
+    };
+    const list = getActiveLists().find(l => l.id === listId);
+    if (!list) return;
+    list.tasks.unshift(task);
+    renderTodos();
+    persistActiveLists();
+    if (isTodoConnected()) {
+      try {
+        const token = await getAccessToken();
+        const body  = { title: task.title, importance: task.importance };
+        if (dueDate) body.dueDateTime = { dateTime: dueDate + 'T00:00:00', timeZone: 'UTC' };
+        const created = await graphPost(`/me/todo/lists/${listId}/tasks`, token, body);
+        task.id = created.id;
+        persistActiveLists();
+      } catch (e) { console.error('MS create task failed', e); }
+    }
+  }
+
+  async function deleteTodoTask(listId, taskId) {
+    const list = getActiveLists().find(l => l.id === listId);
+    if (!list) return;
+    list.tasks = list.tasks.filter(t => t.id !== taskId);
+    renderTodos();
+    persistActiveLists();
+    if (isTodoConnected()) {
+      try {
+        const token = await getAccessToken();
+        await graphDelete(`/me/todo/lists/${listId}/tasks/${taskId}`, token);
+      } catch (e) { console.error('MS delete task failed', e); }
+    }
+  }
+
+  async function addTodoList(name) {
+    const newList = { id: 'local-' + Date.now(), displayName: name, tasks: [] };
+    getActiveLists().push(newList);
+    persistActiveLists();
+    renderTodos();
+    if (isTodoConnected()) {
+      try {
+        const token   = await getAccessToken();
+        const created = await graphPost('/me/todo/lists', token, { displayName: name });
+        newList.id = created.id;
+        persistActiveLists();
+      } catch (e) { console.error('MS create list failed', e); }
+    }
+    return newList;
+  }
+
+  // ── NEW TASK MODAL ───────────────────────────────────────────────────────────
+
+  function openNewTask() {
+    const lists = getActiveLists();
+    if (!newTaskListId || !lists.find(l => l.id === newTaskListId)) {
+      newTaskListId = lists[0]?.id || null;
+    }
+    newTaskStarred = false;
+    document.getElementById('newTaskTitle').value = '';
+    document.getElementById('newTaskDue').value   = '';
+    document.getElementById('newTaskStar').classList.remove('starred');
+    renderNewTaskListPills();
+    document.getElementById('newTaskModal').classList.add('active');
+    setTimeout(() => document.getElementById('newTaskTitle').focus(), 150);
+  }
+
+  function closeNewTask() {
+    document.getElementById('newTaskModal').classList.remove('active');
+  }
+
+  function handleNewTaskOverlay(e) {
+    if (e.target === document.getElementById('newTaskModal')) closeNewTask();
+  }
+
+  function renderNewTaskListPills() {
+    const lists = getActiveLists();
+    document.getElementById('newTaskListPills').innerHTML =
+      lists.map(l => `
+        <button class="ntask-list-pill ${l.id === newTaskListId ? 'active' : ''}"
+          onclick="selectNewTaskList('${l.id}')">${escHtml(l.displayName)}</button>
+      `).join('') +
+      `<button class="ntask-list-pill" onclick="promptAddList()">+ New list</button>`;
+  }
+
+  function selectNewTaskList(id) {
+    newTaskListId = id;
+    renderNewTaskListPills();
+  }
+
+  function toggleNewTaskStar() {
+    newTaskStarred = !newTaskStarred;
+    document.getElementById('newTaskStar').classList.toggle('starred', newTaskStarred);
+  }
+
+  async function promptAddList() {
+    const name = prompt('New list name:');
+    if (!name?.trim()) return;
+    const newList = await addTodoList(name.trim());
+    newTaskListId = newList.id;
+    renderNewTaskListPills();
+  }
+
+  async function submitNewTask() {
+    const title = document.getElementById('newTaskTitle').value.trim();
+    const due   = document.getElementById('newTaskDue').value;
+    if (!title) { document.getElementById('newTaskTitle').focus(); return; }
+    if (!newTaskListId) {
+      const def = { id: 'local-' + Date.now(), displayName: 'Tasks', tasks: [] };
+      getActiveLists().push(def);
+      newTaskListId = def.id;
+      persistActiveLists();
+    }
+    closeNewTask();
+    await addTodoTask(newTaskListId, title, due || null, newTaskStarred ? 'high' : 'normal');
   }
 
   async function toggleTaskImportance(listId, taskId) {
-    const list = todoCache.lists.find(l => l.id === listId);
+    const list = getActiveLists().find(l => l.id === listId);
     const task = list?.tasks.find(t => t.id === taskId);
     if (!task) return;
     const newImportance = task.importance === 'high' ? 'normal' : 'high';
     task.importance = newImportance;
     renderTodos();
-    try {
-      const token = await getAccessToken();
-      await graphPatch(`/me/todo/lists/${listId}/tasks/${taskId}`, token, { importance: newImportance });
-      localStorage.setItem('todo_cache', JSON.stringify(todoCache));
-    } catch (e) {
-      task.importance = newImportance === 'high' ? 'normal' : 'high';
-      renderTodos();
+    persistActiveLists();
+    if (isTodoConnected()) {
+      try {
+        const token = await getAccessToken();
+        await graphPatch(`/me/todo/lists/${listId}/tasks/${taskId}`, token, { importance: newImportance });
+      } catch (e) {
+        task.importance = newImportance === 'high' ? 'normal' : 'high';
+        renderTodos();
+        persistActiveLists();
+      }
     }
   }
 
@@ -2696,29 +2920,30 @@ ${entry.content}
     if (togglingTasks.has(key)) return;
     togglingTasks.add(key);
 
-    const list = todoCache.lists.find(l => l.id === listId);
+    const list = getActiveLists().find(l => l.id === listId);
     const task = list?.tasks.find(t => t.id === taskId);
     if (!task) { togglingTasks.delete(key); return; }
 
-    const newStatus   = task.status === 'completed' ? 'notStarted' : 'completed';
-    task.status       = newStatus; // optimistic
+    const newStatus = task.status === 'completed' ? 'notStarted' : 'completed';
+    task.status = newStatus; // optimistic
     renderTodos();
+    persistActiveLists();
 
-    try {
-      const token = await getAccessToken();
-      await graphPatch(`/me/todo/lists/${listId}/tasks/${taskId}`, token, { status: newStatus });
-      localStorage.setItem('todo_cache', JSON.stringify(todoCache));
-    } catch (e) {
-      task.status = newStatus === 'completed' ? 'notStarted' : 'completed'; // revert
-      renderTodos();
-      alert('Failed: ' + e.message);
-    } finally {
-      togglingTasks.delete(key);
+    if (isTodoConnected()) {
+      try {
+        const token = await getAccessToken();
+        await graphPatch(`/me/todo/lists/${listId}/tasks/${taskId}`, token, { status: newStatus });
+      } catch (e) {
+        task.status = newStatus === 'completed' ? 'notStarted' : 'completed'; // revert
+        renderTodos();
+        persistActiveLists();
+      }
     }
+    togglingTasks.delete(key);
   }
 
   async function toggleSubtask(listId, taskId, itemId) {
-    const list = todoCache.lists.find(l => l.id === listId);
+    const list = getActiveLists().find(l => l.id === listId);
     const task = list?.tasks.find(t => t.id === taskId);
     const item = task?.checklistItems?.find(i => i.id === itemId);
     if (!item) return;
@@ -2726,17 +2951,20 @@ ${entry.content}
     const newChecked = !item.isChecked;
     item.isChecked = newChecked; // optimistic
     renderTodos();
+    persistActiveLists();
 
-    try {
-      const token = await getAccessToken();
-      await graphPatch(
-        `/me/todo/lists/${listId}/tasks/${taskId}/checklistItems/${itemId}`,
-        token, { isChecked: newChecked }
-      );
-      localStorage.setItem('todo_cache', JSON.stringify(todoCache));
-    } catch (e) {
-      item.isChecked = !newChecked; // revert
-      renderTodos();
+    if (isTodoConnected()) {
+      try {
+        const token = await getAccessToken();
+        await graphPatch(
+          `/me/todo/lists/${listId}/tasks/${taskId}/checklistItems/${itemId}`,
+          token, { isChecked: newChecked }
+        );
+      } catch (e) {
+        item.isChecked = !newChecked; // revert
+        renderTodos();
+        persistActiveLists();
+      }
     }
   }
 
@@ -2753,28 +2981,31 @@ ${entry.content}
   }
 
   function renderTodos() {
-    if (!isTodoConnected()) {
-      document.getElementById('todosNotConnected').style.display = 'flex';
-      document.getElementById('todosMain').style.display = 'none';
-      return;
-    }
-    document.getElementById('todosNotConnected').style.display = 'none';
-    showTodosMain();
-
     const container = document.getElementById('todosList');
-    if (!todoCache.lists.length) {
-      container.innerHTML = '<div class="todos-empty"><div class="todos-empty-icon">📋</div>No tasks yet — tap ↻ to sync.</div>';
+    const lists = getActiveLists();
+    const t = todoTodayStr();
+    let header = '';
+
+    // Offline banner — shown inline at top when not connected to MS
+    if (!isTodoConnected()) {
+      header = `<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#795548">
+        Local only — <a href="#" onclick="go('settings');return false;" style="color:#1976d2">Sign in to Microsoft</a> to sync with To Do.
+      </div>`;
+    } else if (todoCache.updatedAt) {
+      header = `<div class="todos-last-sync">Synced ${new Date(todoCache.updatedAt).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})}</div>`;
+    }
+
+    if (!lists.length) {
+      container.innerHTML = header + '<div class="todos-empty"><div class="todos-empty-icon">📋</div>No lists yet — tap + to add a task.</div>';
       return;
     }
 
-    const t = todoTodayStr();
     let listSections = '';
-    let taskCount    = 0;
 
     // For Important + My Day filters: flatten tasks across all lists
     if (todoFilter === 'today' || todoFilter === 'important') {
       const allTasks = [];
-      todoCache.lists.forEach(list => {
+      lists.forEach(list => {
         (list.tasks || []).forEach(task => {
           if (task.status === 'completed') return;
           if (todoFilter === 'today') {
@@ -2787,22 +3018,21 @@ ${entry.content}
       });
 
       if (!allTasks.length) {
-        const msg = todoFilter === 'today' ? 'Nothing due today! 🎉' : 'No important tasks ★';
-        container.innerHTML = `<div class="todos-empty"><div class="todos-empty-icon">${todoFilter === 'today' ? '🎉' : '★'}</div>${msg}</div>`;
+        const msg = todoFilter === 'today' ? 'Nothing due today!' : 'No starred tasks';
+        container.innerHTML = header + `<div class="todos-empty"><div class="todos-empty-icon">${todoFilter === 'today' ? '🎉' : '★'}</div>${msg}</div>`;
         return;
       }
 
       listSections = allTasks.map(({ task, list }) => buildTaskRow(task, list.id, t)).join('');
-      container.innerHTML = (todoCache.updatedAt ? `<div class="todos-last-sync">Synced ${new Date(todoCache.updatedAt).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})}</div>` : '') + listSections;
+      container.innerHTML = header + listSections;
       return;
     }
 
     // All filter — grouped by list
-    todoCache.lists.forEach(list => {
+    lists.forEach(list => {
       const tasks        = list.tasks || [];
       const pendingCount = tasks.filter(tk => tk.status !== 'completed').length;
       const isCollapsed  = collapsedLists.has(list.id);
-      taskCount += pendingCount;
 
       listSections += `<div class="todo-list-section ${isCollapsed ? 'collapsed' : ''}" id="tls-${list.id}">
         <div class="todo-list-header" onclick="toggleListCollapse('${list.id}')">
@@ -2818,9 +3048,7 @@ ${entry.content}
       </div>`;
     });
 
-    container.innerHTML =
-      (todoCache.updatedAt ? `<div class="todos-last-sync">Synced ${new Date(todoCache.updatedAt).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})}</div>` : '') +
-      listSections;
+    container.innerHTML = header + listSections;
   }
 
   function buildTaskRow(task, listId, t) {
@@ -2854,6 +3082,7 @@ ${entry.content}
       </div>
       <div class="todo-task-right">
         <button class="todo-star-btn ${isHigh ? 'starred' : ''}" onclick="toggleTaskImportance('${listId}','${task.id}')">★</button>
+        <button class="todo-del-btn" onclick="deleteTodoTask('${listId}','${task.id}')" title="Delete">🗑</button>
       </div>
     </div>`;
   }

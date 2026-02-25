@@ -9,6 +9,7 @@
   <meta name="theme-color" content="#6366f1">
   <link rel="manifest" href="manifest.json">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://alcdn.msauth.net/browser/2.39.0/js/msal-browser.min.js"></script>
   <title>Habits</title>
   <style>
     :root {
@@ -872,6 +873,180 @@
     }
     .btn-import:active { opacity: .85; }
     .backup-hint { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+
+    /* ── TODOS VIEW ── */
+    .todos-auth-screen {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 32px 24px; text-align: center; gap: 14px;
+    }
+    .todos-auth-icon  { font-size: 52px; }
+    .todos-auth-title { font-size: 20px; font-weight: 800; }
+    .todos-auth-sub   { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    .todos-setup-card {
+      background: var(--card); border-radius: var(--r);
+      padding: 14px 16px; width: 100%; max-width: 340px; text-align: left;
+    }
+    .todos-setup-lbl {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--muted); margin-bottom: 6px;
+    }
+    .todos-setup-input {
+      width: 100%; padding: 10px 12px;
+      border: 2px solid var(--border); border-radius: 10px;
+      background: var(--bg); color: var(--text);
+      font-size: 13px; font-family: inherit; outline: none; margin-bottom: 8px;
+    }
+    .todos-setup-input:focus { border-color: #0078d4; }
+    .todos-setup-hint { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+    .todos-login-btn {
+      background: #0078d4; color: #fff;
+      border: none; border-radius: 13px;
+      padding: 14px 28px; font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 3px 12px rgba(0,120,212,.35);
+    }
+    .todos-login-btn:active { opacity: .88; transform: scale(.97); }
+
+    #todosMain {
+      flex: 1; overflow: hidden;
+      flex-direction: column;
+    }
+
+    .todos-toolbar {
+      flex-shrink: 0;
+      background: var(--card); border-bottom: 1px solid var(--border);
+      padding: 10px 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .todos-filter-btn {
+      padding: 6px 14px; border-radius: 20px;
+      border: 2px solid var(--border);
+      background: var(--bg); color: var(--muted);
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      font-family: inherit; transition: all .12s;
+    }
+    .todos-filter-btn.active { background: #0078d4; color: #fff; border-color: #0078d4; }
+    .todos-filter-btn:active { transform: scale(.95); }
+
+    .todos-user-pill {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--bg); border-radius: 20px;
+      padding: 4px 10px 4px 6px;
+      font-size: 12px; font-weight: 600; color: var(--muted);
+    }
+    .todos-avatar {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #0078d4; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; flex-shrink: 0;
+    }
+    .todos-sync-btn {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--bg); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; transition: transform .3s;
+      flex-shrink: 0;
+    }
+    .todos-sync-btn.spinning { animation: spin360 .8s linear infinite; }
+    @keyframes spin360 { to { transform: rotate(360deg); } }
+    .todos-logout-btn {
+      background: none; border: 2px solid var(--border);
+      border-radius: 20px; padding: 5px 12px;
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      cursor: pointer; font-family: inherit; flex-shrink: 0;
+    }
+    .todos-logout-btn:active { opacity: .7; }
+
+    .todos-scroll {
+      flex: 1; overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 12px 14px 24px;
+    }
+    .todos-last-sync {
+      font-size: 10px; color: var(--muted); text-align: right;
+      margin-bottom: 8px; font-style: italic;
+    }
+
+    /* list groups */
+    .todo-list-section  { margin-bottom: 18px; }
+    .todo-list-header   {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 2px; cursor: pointer; user-select: none;
+    }
+    .todo-list-name {
+      flex: 1; font-size: 11px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: .07em; color: var(--muted);
+    }
+    .todo-list-count {
+      font-size: 11px; font-weight: 700;
+      background: var(--bg); color: var(--muted);
+      padding: 2px 8px; border-radius: 10px;
+    }
+    .todo-list-chevron { font-size: 11px; color: var(--muted); transition: transform .2s; }
+    .todo-list-section.collapsed .todo-list-chevron { transform: rotate(-90deg); }
+    .todo-list-section.collapsed .todo-list-tasks  { display: none; }
+
+    /* task cards */
+    .todo-task-card {
+      background: var(--card); border-radius: 12px;
+      padding: 11px 13px; margin-bottom: 6px;
+      display: flex; align-items: flex-start; gap: 11px;
+      border: 2px solid transparent; transition: all .12s;
+      cursor: default;
+    }
+    .todo-task-card.due-today { border-color: #0078d4; background: #eff6ff; }
+    .todo-task-card.overdue   { border-color: #ef4444; background: #fef2f2; }
+    .todo-task-card.completed { opacity: .48; }
+
+    .todo-check {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+      background: var(--bg); cursor: pointer;
+      transition: all .15s; font-size: 12px; color: #fff;
+    }
+    .todo-task-card.completed .todo-check { background: #0078d4; border-color: #0078d4; }
+    .todo-task-card.due-today .todo-check { border-color: #0078d4; }
+    .todo-task-card.overdue   .todo-check { border-color: #ef4444; }
+    .todo-check:active { transform: scale(.85); }
+
+    .todo-task-body  { flex: 1; min-width: 0; }
+    .todo-task-name  { font-size: 14px; font-weight: 600; line-height: 1.35; word-break: break-word; }
+    .todo-task-card.completed .todo-task-name { text-decoration: line-through; color: var(--muted); }
+
+    .todo-task-meta  { display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+    .todo-due-badge  {
+      font-size: 11px; font-weight: 700; padding: 2px 7px;
+      border-radius: 8px; background: var(--bg); color: var(--muted);
+    }
+    .todo-due-badge.today { background: #dbeafe; color: #1d4ed8; }
+    .todo-due-badge.late  { background: #fee2e2; color: #ef4444; }
+    .todo-star  { font-size: 13px; color: #f59e0b; }
+    .todo-sub-count { font-size: 11px; color: var(--muted); }
+
+    /* subtasks */
+    .todo-subtasks { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
+    .todo-sub-item {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--muted); cursor: pointer;
+    }
+    .todo-sub-check {
+      width: 16px; height: 16px; border-radius: 4px;
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 10px; color: #fff;
+      background: var(--bg); transition: all .15s;
+    }
+    .todo-sub-check.done { background: #0078d4; border-color: #0078d4; }
+    .todo-sub-item.done-item .todo-sub-name { text-decoration: line-through; }
+
+    .todos-empty      { text-align: center; padding: 32px 20px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+    .todos-empty-icon { font-size: 36px; margin-bottom: 10px; }
   </style>
 </head>
 <body>
@@ -989,6 +1164,44 @@
       </div>
     </div>
 
+    <!-- TODOS VIEW -->
+    <div class="view" id="view-todos">
+
+      <!-- Auth / setup screen -->
+      <div class="todos-auth-screen" id="todosAuthScreen">
+        <div class="todos-auth-icon">✅</div>
+        <div class="todos-auth-title">Microsoft To Do</div>
+        <div class="todos-auth-sub">Connect your Microsoft account to sync your tasks and lists.</div>
+        <div class="todos-setup-card">
+          <div class="todos-setup-lbl">Azure App Client ID</div>
+          <input class="todos-setup-input" id="msClientId" type="text" value="53b399c3-2c57-493e-8619-8fe43fac575b">
+          <div class="todos-setup-hint">
+            Register a free app at <strong>portal.azure.com</strong> → App registrations → New registration → Platform: Single-page application → Redirect URI: this page's URL. Add permission <strong>Tasks.ReadWrite</strong>.
+          </div>
+        </div>
+        <button class="todos-login-btn" onclick="msLogin()">
+          <svg width="20" height="20" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+          Sign in with Microsoft
+        </button>
+      </div>
+
+      <!-- Main todos screen (shown once authenticated) -->
+      <div id="todosMain" style="display:none">
+        <div class="todos-toolbar">
+          <button class="todos-filter-btn active" id="tfAll"   onclick="setTodoFilter('all')">All</button>
+          <button class="todos-filter-btn"        id="tfToday" onclick="setTodoFilter('today')">Today</button>
+          <div class="todos-user-pill">
+            <div class="todos-avatar" id="todosAvatar">?</div>
+            <span id="todosUserName"></span>
+          </div>
+          <button class="todos-sync-btn"   id="todosSyncBtn" onclick="syncTodos()" title="Sync">↻</button>
+          <button class="todos-logout-btn" onclick="msLogout()">Sign out</button>
+        </div>
+        <div class="todos-scroll" id="todosList"></div>
+      </div>
+
+    </div>
+
   </div><!-- #app -->
 
   <!-- BOTTOM NAV -->
@@ -1004,6 +1217,10 @@
     <button class="nav-btn" id="nav-journal" onclick="go('journal')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
       Journal
+    </button>
+    <button class="nav-btn" id="nav-todos" onclick="go('todos')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      To Do
     </button>
     <button class="nav-btn" id="nav-settings" onclick="go('settings')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -1229,7 +1446,7 @@
   }
 
   // ── NAVIGATION ──────────────────────────────────────────────────────────────
-  const VIEW_TITLES = { today: 'Today', history: 'Calendar', journal: 'Journal', settings: 'Settings' };
+  const VIEW_TITLES = { today: 'Today', history: 'Calendar', journal: 'Journal', todos: 'To Do', settings: 'Settings' };
 
   function go(v) {
     document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
@@ -1240,6 +1457,7 @@
     if (v === 'today')    renderToday();
     if (v === 'history')  renderCalendar();
     if (v === 'journal')  renderJournal();
+    if (v === 'todos')    renderTodos();
     if (v === 'settings') renderSettings();
   }
 
@@ -2212,11 +2430,351 @@ ${entry.content}
     renderJournal();
   }
 
+  // ── MICROSOFT TO DO ──────────────────────────────────────────────────────────
+
+  let msalApp      = null;
+  let todoFilter   = 'all';
+  let todoCache    = { lists: [], updatedAt: null };
+  let collapsedLists = new Set(); // list IDs that are collapsed (default = expanded)
+  let togglingTasks  = new Set(); // debounce double-taps
+
+  const MS_CLIENT_ID_DEFAULT = '53b399c3-2c57-493e-8619-8fe43fac575b';
+
+  function getMsClientId() {
+    return (localStorage.getItem('ms_client_id') || MS_CLIENT_ID_DEFAULT).trim();
+  }
+
+  function initMsal(clientId) {
+    msalApp = new msal.PublicClientApplication({
+      auth: {
+        clientId,
+        authority: 'https://login.microsoftonline.com/common',
+        redirectUri: window.location.origin + window.location.pathname,
+      },
+      cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: false },
+    });
+  }
+
+  async function msLogin() {
+    const clientId = document.getElementById('msClientId').value.trim();
+    if (!clientId) { alert('Please enter your Azure App Client ID first.'); return; }
+    localStorage.setItem('ms_client_id', clientId);
+    initMsal(clientId);
+    try {
+      await msalApp.loginPopup({ scopes: ['Tasks.ReadWrite', 'User.Read'] });
+      await afterMsLogin();
+    } catch (e) {
+      console.error('Login error', e);
+      alert('Sign-in failed: ' + (e.message || e));
+    }
+  }
+
+  function msLogout() {
+    if (msalApp) msalApp.logoutPopup().catch(() => {});
+    todoCache = { lists: [], updatedAt: null };
+    showTodosAuthScreen();
+  }
+
+  async function getAccessToken() {
+    const accounts = msalApp.getAllAccounts();
+    if (!accounts.length) throw new Error('Not signed in');
+    const req = { account: accounts[0], scopes: ['Tasks.ReadWrite', 'User.Read'] };
+    try {
+      const res = await msalApp.acquireTokenSilent(req);
+      return res.accessToken;
+    } catch {
+      const res = await msalApp.acquireTokenPopup(req);
+      return res.accessToken;
+    }
+  }
+
+  async function graphGet(path, token) {
+    const r = await fetch('https://graph.microsoft.com/v1.0' + path, {
+      headers: { Authorization: 'Bearer ' + token },
+    });
+    if (!r.ok) throw new Error('Graph ' + r.status + ' on ' + path);
+    return r.json();
+  }
+
+  async function graphPatch(path, token, body) {
+    const r = await fetch('https://graph.microsoft.com/v1.0' + path, {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) throw new Error('Graph ' + r.status);
+  }
+
+  async function afterMsLogin() {
+    const accounts = msalApp.getAllAccounts();
+    if (!accounts.length) return;
+    const acc = accounts[0];
+    document.getElementById('todosUserName').textContent = (acc.name || acc.username || '').split(' ')[0];
+    document.getElementById('todosAvatar').textContent   = (acc.name || acc.username || '?')[0].toUpperCase();
+    showTodosMain();
+    // Restore cache immediately, then sync in background
+    try {
+      const cached = JSON.parse(localStorage.getItem('todo_cache'));
+      if (cached?.lists?.length) { todoCache = cached; renderTodos(); }
+    } catch { /* ignore */ }
+    await syncTodos();
+  }
+
+  function showTodosAuthScreen() {
+    document.getElementById('todosAuthScreen').style.display = '';
+    document.getElementById('todosMain').style.display = 'none';
+    const saved = getMsClientId();
+    if (saved) document.getElementById('msClientId').value = saved;
+  }
+
+  function showTodosMain() {
+    document.getElementById('todosAuthScreen').style.display = 'none';
+    const m = document.getElementById('todosMain');
+    m.style.display        = 'flex';
+    m.style.flexDirection  = 'column';
+    m.style.flex           = '1';
+    m.style.overflow       = 'hidden';
+  }
+
+  async function syncTodos() {
+    const btn = document.getElementById('todosSyncBtn');
+    if (btn) btn.classList.add('spinning');
+    try {
+      const token = await getAccessToken();
+
+      // Fetch all lists
+      const listsData = await graphGet('/me/todo/lists', token);
+
+      // Fetch tasks + checklist items for each list in parallel
+      const listsWithTasks = await Promise.all(listsData.value.map(async list => {
+        const tasksData = await graphGet(
+          `/me/todo/lists/${list.id}/tasks?$top=100&$expand=checklistItems`, token
+        );
+        return { ...list, tasks: tasksData.value };
+      }));
+
+      todoCache = { lists: listsWithTasks, updatedAt: new Date().toISOString() };
+      localStorage.setItem('todo_cache', JSON.stringify(todoCache));
+      renderTodos();
+    } catch (e) {
+      console.error('Sync error', e);
+      if (document.getElementById('view-todos').classList.contains('active')) {
+        alert('Sync failed: ' + (e.message || e));
+      }
+    } finally {
+      if (btn) btn.classList.remove('spinning');
+    }
+  }
+
+  function setTodoFilter(f) {
+    todoFilter = f;
+    document.getElementById('tfAll').classList.toggle('active',   f === 'all');
+    document.getElementById('tfToday').classList.toggle('active', f === 'today');
+    renderTodos();
+  }
+
+  function todoTodayStr() {
+    const d = today;
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+
+  function taskDueStatus(task) {
+    if (!task.dueDateTime) return null;
+    const due = task.dueDateTime.dateTime.slice(0, 10);
+    const t   = todoTodayStr();
+    if (due < t) return 'late';
+    if (due === t) return 'today';
+    return 'future';
+  }
+
+  function formatTaskDue(task) {
+    if (!task.dueDateTime) return '';
+    const due = task.dueDateTime.dateTime.slice(0, 10);
+    const t   = todoTodayStr();
+    if (due === t) return 'Today';
+    const dueD  = new Date(due + 'T00:00:00');
+    const todD  = new Date(t   + 'T00:00:00');
+    const diff  = Math.round((dueD - todD) / 86400000);
+    if (diff === -1) return 'Yesterday';
+    if (diff === 1)  return 'Tomorrow';
+    if (diff < 0)    return Math.abs(diff) + 'd ago';
+    return dueD.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+  }
+
+  async function toggleTaskComplete(listId, taskId) {
+    const key = listId + '|' + taskId;
+    if (togglingTasks.has(key)) return;
+    togglingTasks.add(key);
+
+    const list = todoCache.lists.find(l => l.id === listId);
+    const task = list?.tasks.find(t => t.id === taskId);
+    if (!task) { togglingTasks.delete(key); return; }
+
+    const newStatus   = task.status === 'completed' ? 'notStarted' : 'completed';
+    task.status       = newStatus; // optimistic
+    renderTodos();
+
+    try {
+      const token = await getAccessToken();
+      await graphPatch(`/me/todo/lists/${listId}/tasks/${taskId}`, token, { status: newStatus });
+      localStorage.setItem('todo_cache', JSON.stringify(todoCache));
+    } catch (e) {
+      task.status = newStatus === 'completed' ? 'notStarted' : 'completed'; // revert
+      renderTodos();
+      alert('Failed: ' + e.message);
+    } finally {
+      togglingTasks.delete(key);
+    }
+  }
+
+  async function toggleSubtask(listId, taskId, itemId) {
+    const list = todoCache.lists.find(l => l.id === listId);
+    const task = list?.tasks.find(t => t.id === taskId);
+    const item = task?.checklistItems?.find(i => i.id === itemId);
+    if (!item) return;
+
+    const newChecked = !item.isChecked;
+    item.isChecked = newChecked; // optimistic
+    renderTodos();
+
+    try {
+      const token = await getAccessToken();
+      await graphPatch(
+        `/me/todo/lists/${listId}/tasks/${taskId}/checklistItems/${itemId}`,
+        token, { isChecked: newChecked }
+      );
+      localStorage.setItem('todo_cache', JSON.stringify(todoCache));
+    } catch (e) {
+      item.isChecked = !newChecked; // revert
+      renderTodos();
+    }
+  }
+
+  function toggleListCollapse(listId) {
+    if (collapsedLists.has(listId)) collapsedLists.delete(listId);
+    else collapsedLists.add(listId);
+    // toggle collapsed class directly without full re-render
+    const el = document.getElementById('tls-' + listId);
+    if (el) el.classList.toggle('collapsed');
+  }
+
+  function renderTodos() {
+    if (!msalApp || !msalApp.getAllAccounts().length) {
+      showTodosAuthScreen();
+      return;
+    }
+    showTodosMain();
+
+    const container = document.getElementById('todosList');
+    if (!todoCache.lists.length) {
+      container.innerHTML = '<div class="todos-empty"><div class="todos-empty-icon">📋</div>No lists yet — tap ↻ to sync.</div>';
+      return;
+    }
+
+    const t = todoTodayStr();
+    let html = '';
+
+    if (todoCache.updatedAt) {
+      const d = new Date(todoCache.updatedAt);
+      html += `<div class="todos-last-sync">Synced ${d.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}</div>`;
+    }
+
+    todoCache.lists.forEach(list => {
+      let tasks = list.tasks || [];
+
+      if (todoFilter === 'today') {
+        tasks = tasks.filter(task => {
+          if (task.status === 'completed') return false;
+          const due = task.dueDateTime?.dateTime?.slice(0, 10);
+          return due && due <= t;
+        });
+        if (!tasks.length) return; // skip lists with nothing due today
+      }
+
+      const pendingCount = tasks.filter(tk => tk.status !== 'completed').length;
+      const isCollapsed  = collapsedLists.has(list.id);
+
+      html += `<div class="todo-list-section ${isCollapsed ? 'collapsed' : ''}" id="tls-${list.id}">`;
+      html += `<div class="todo-list-header" onclick="toggleListCollapse('${list.id}')">
+        <div class="todo-list-name">${escHtml(list.displayName)}</div>
+        <div class="todo-list-count">${pendingCount}</div>
+        <div class="todo-list-chevron">▾</div>
+      </div>`;
+      html += `<div class="todo-list-tasks">`;
+
+      if (!tasks.length) {
+        html += `<div class="todos-empty" style="padding:10px 4px 14px"><div class="todos-empty-icon" style="font-size:22px">✓</div>All done!</div>`;
+      } else {
+        tasks.forEach(task => {
+          const dueStatus  = taskDueStatus(task);
+          const dueLabel   = formatTaskDue(task);
+          const isComplete = task.status === 'completed';
+          const isHigh     = task.importance === 'high';
+          const subs       = task.checklistItems || [];
+          const subDone    = subs.filter(s => s.isChecked).length;
+
+          let cardCls = 'todo-task-card';
+          if (isComplete)           cardCls += ' completed';
+          else if (dueStatus === 'late')  cardCls += ' overdue';
+          else if (dueStatus === 'today') cardCls += ' due-today';
+
+          html += `<div class="${cardCls}">
+            <div class="todo-check" onclick="toggleTaskComplete('${list.id}','${task.id}')">
+              ${isComplete ? '✓' : ''}
+            </div>
+            <div class="todo-task-body">
+              <div class="todo-task-name">${escHtml(task.title)}</div>
+              <div class="todo-task-meta">
+                ${isHigh ? '<span class="todo-star">★</span>' : ''}
+                ${dueLabel ? `<span class="todo-due-badge ${dueStatus === 'today' ? 'today' : dueStatus === 'late' ? 'late' : ''}">${dueLabel}</span>` : ''}
+                ${subs.length ? `<span class="todo-sub-count">📋 ${subDone}/${subs.length}</span>` : ''}
+              </div>
+              ${subs.length ? `<div class="todo-subtasks">${subs.map(sub => `
+                <div class="todo-sub-item ${sub.isChecked ? 'done-item' : ''}" onclick="toggleSubtask('${list.id}','${task.id}','${sub.id}')">
+                  <div class="todo-sub-check ${sub.isChecked ? 'done' : ''}">${sub.isChecked ? '✓' : ''}</div>
+                  <span class="todo-sub-name">${escHtml(sub.displayName)}</span>
+                </div>`).join('')}</div>` : ''}
+            </div>
+          </div>`;
+        });
+      }
+
+      html += `</div></div>`; // .todo-list-tasks + .todo-list-section
+    });
+
+    if (!html || html === `<div class="todos-last-sync">${html.match(/Synced.*?<\/div>/)?.[0] || ''}</div>`) {
+      container.innerHTML = '<div class="todos-empty"><div class="todos-empty-icon">🎉</div>Nothing due today!</div>';
+    } else {
+      container.innerHTML = html;
+    }
+  }
+
+  async function initTodos() {
+    const clientId = getMsClientId();
+    if (!clientId) { showTodosAuthScreen(); return; }
+    initMsal(clientId);
+    try { await msalApp.handleRedirectPromise(); } catch { /* ignore */ }
+    const accounts = msalApp.getAllAccounts();
+    if (!accounts.length) { showTodosAuthScreen(); return; }
+    // Restore user info from cached account
+    const acc = accounts[0];
+    document.getElementById('todosUserName').textContent = (acc.name || acc.username || '').split(' ')[0];
+    document.getElementById('todosAvatar').textContent   = (acc.name || acc.username || '?')[0].toUpperCase();
+    // Restore task cache
+    try {
+      const cached = JSON.parse(localStorage.getItem('todo_cache'));
+      if (cached?.lists?.length) todoCache = cached;
+    } catch { /* ignore */ }
+  }
+
   // ── INIT ────────────────────────────────────────────────────────────────────
   (function init() {
     document.getElementById('hEye').textContent =
       today.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     renderToday();
+    initTodos();
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});

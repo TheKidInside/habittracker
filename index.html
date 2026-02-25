@@ -1047,6 +1047,54 @@
 
     .todos-empty      { text-align: center; padding: 32px 20px; color: var(--muted); font-size: 14px; line-height: 1.6; }
     .todos-empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+    /* not-connected state */
+    .todos-not-connected {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 32px 24px; text-align: center; gap: 10px;
+    }
+    .todos-nc-icon  { font-size: 44px; }
+    .todos-nc-title { font-size: 17px; font-weight: 800; }
+    .todos-nc-sub   { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 6px; }
+    .todos-nc-btn   {
+      background: #0078d4; color: #fff;
+      border: none; border-radius: 12px;
+      padding: 12px 24px; font-size: 14px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+    }
+    .todos-nc-btn:active { opacity: .88; }
+
+    /* settings MS Todo block */
+    .ms-account-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+    }
+    .ms-account-info { flex: 1; min-width: 0; }
+    .ms-account-name { font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ms-account-email{ font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* cleaner task rows */
+    .todo-task-card {
+      background: var(--card); border-radius: 12px;
+      padding: 10px 12px; margin-bottom: 4px;
+      display: flex; align-items: flex-start; gap: 11px;
+      border: 1.5px solid transparent; transition: background .1s;
+      cursor: default;
+    }
+    .todo-task-card + .todo-task-card { border-top: 1px solid var(--border); border-radius: 0; margin-bottom: 0; }
+    .todo-task-card:first-child { border-radius: 12px 12px 0 0; }
+    .todo-task-card:last-child  { border-radius: 0 0 12px 12px; margin-bottom: 6px; }
+    .todo-task-card:only-child  { border-radius: 12px; margin-bottom: 6px; }
+    .todo-task-card.due-today { background: #eff6ff; }
+    .todo-task-card.overdue   { background: #fef2f2; }
+    .todo-task-card.completed { opacity: .45; }
+    .todo-task-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-top: 2px; }
+    .todo-star-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 16px; color: #d1d5db; padding: 0; line-height: 1;
+    }
+    .todo-star-btn.starred { color: #f59e0b; }
+    .todo-star-btn:active { transform: scale(.8); }
   </style>
 </head>
 <body>
@@ -1154,6 +1202,11 @@
           <div class="backup-hint">Export saves everything to your Files app. Import restores from a previous backup.</div>
         </div>
 
+        <div class="backup-block" id="msTodoBlock" style="margin-top:12px">
+          <div class="backup-title">Microsoft To Do</div>
+          <div id="msTodoSettingsContent"></div>
+        </div>
+
         <div class="legend-block">
           <div class="section-lbl" style="margin:0 0 8px">Legend</div>
           <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div><div><strong>Full</strong> — Completed in full</div></div>
@@ -1167,35 +1220,21 @@
     <!-- TODOS VIEW -->
     <div class="view" id="view-todos">
 
-      <!-- Auth / setup screen -->
-      <div class="todos-auth-screen" id="todosAuthScreen">
-        <div class="todos-auth-icon">✅</div>
-        <div class="todos-auth-title">Microsoft To Do</div>
-        <div class="todos-auth-sub">Connect your Microsoft account to sync your tasks and lists.</div>
-        <div class="todos-setup-card">
-          <div class="todos-setup-lbl">Azure App Client ID</div>
-          <input class="todos-setup-input" id="msClientId" type="text" value="53b399c3-2c57-493e-8619-8fe43fac575b">
-          <div class="todos-setup-hint">
-            Register a free app at <strong>portal.azure.com</strong> → App registrations → New registration → Platform: Single-page application → Redirect URI: this page's URL. Add permission <strong>Tasks.ReadWrite</strong>.
-          </div>
-        </div>
-        <button class="todos-login-btn" onclick="msLogin()">
-          <svg width="20" height="20" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
-          Sign in with Microsoft
-        </button>
+      <!-- Not connected -->
+      <div class="todos-not-connected" id="todosNotConnected" style="display:none">
+        <div class="todos-nc-icon">✅</div>
+        <div class="todos-nc-title">Microsoft To Do</div>
+        <div class="todos-nc-sub">Connect your account in Settings to sync your tasks.</div>
+        <button class="todos-nc-btn" onclick="go('settings')">Go to Settings →</button>
       </div>
 
-      <!-- Main todos screen (shown once authenticated) -->
+      <!-- Main (shown when signed in) -->
       <div id="todosMain" style="display:none">
         <div class="todos-toolbar">
-          <button class="todos-filter-btn active" id="tfAll"   onclick="setTodoFilter('all')">All</button>
-          <button class="todos-filter-btn"        id="tfToday" onclick="setTodoFilter('today')">Today</button>
-          <div class="todos-user-pill">
-            <div class="todos-avatar" id="todosAvatar">?</div>
-            <span id="todosUserName"></span>
-          </div>
-          <button class="todos-sync-btn"   id="todosSyncBtn" onclick="syncTodos()" title="Sync">↻</button>
-          <button class="todos-logout-btn" onclick="msLogout()">Sign out</button>
+          <button class="todos-filter-btn active" id="tfAll"       onclick="setTodoFilter('all')">All</button>
+          <button class="todos-filter-btn"        id="tfToday"     onclick="setTodoFilter('today')">My Day</button>
+          <button class="todos-filter-btn"        id="tfImportant" onclick="setTodoFilter('important')">★</button>
+          <button class="todos-sync-btn" id="todosSyncBtn" onclick="syncTodos()" title="Sync">↻</button>
         </div>
         <div class="todos-scroll" id="todosList"></div>
       </div>
@@ -1457,7 +1496,7 @@
     if (v === 'today')    renderToday();
     if (v === 'history')  renderCalendar();
     if (v === 'journal')  renderJournal();
-    if (v === 'todos')    renderTodos();
+    if (v === 'todos')    { renderTodos(); if (isTodoConnected()) syncTodos(); }
     if (v === 'settings') renderSettings();
   }
 
@@ -1678,6 +1717,33 @@
               : `<button class="del-btn" onclick="removeHabit('${h.id}')">×</button>`}
           </div>`).join('')
       : '<div class="empty">No habits yet.</div>';
+
+    // MS Todo connection block
+    const el = document.getElementById('msTodoSettingsContent');
+    const connected = !!(msalApp && msalApp.getAllAccounts().length);
+    if (connected) {
+      const acc  = msalApp.getAllAccounts()[0];
+      const name = acc.name || acc.username || 'Connected';
+      el.innerHTML = `
+        <div class="ms-account-row">
+          <div class="todos-avatar" style="width:32px;height:32px;font-size:14px;flex-shrink:0">${escHtml(name[0].toUpperCase())}</div>
+          <div class="ms-account-info">
+            <div class="ms-account-name">${escHtml(name)}</div>
+            <div class="ms-account-email">${escHtml(acc.username)}</div>
+          </div>
+        </div>
+        <div class="backup-row">
+          <button class="btn-export" style="background:#0078d4" onclick="syncTodos();go('todos')">↻ Sync & View</button>
+          <button class="btn-import" onclick="msDisconnect()">Disconnect</button>
+        </div>`;
+    } else {
+      el.innerHTML = `
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Not connected. Sync your Microsoft To Do tasks.</div>
+        <button class="todos-login-btn" style="width:100%;justify-content:center;font-size:14px;padding:12px;border-radius:12px;box-shadow:none" onclick="msLogin()">
+          <svg width="16" height="16" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+          Sign in with Microsoft
+        </button>`;
+    }
   }
 
   function addHabit() {
@@ -2460,12 +2526,9 @@ ${entry.content}
       alert('Auth library failed to load. Check your internet connection and refresh.');
       return;
     }
-    const clientId = document.getElementById('msClientId').value.trim();
-    if (!clientId) { alert('Please enter your Azure App Client ID first.'); return; }
-    localStorage.setItem('ms_client_id', clientId);
+    const clientId = getMsClientId();
     initMsal(clientId);
     try {
-      // Redirect flow — page navigates to Microsoft then returns here
       await msalApp.loginRedirect({ scopes: ['Tasks.ReadWrite', 'User.Read'] });
     } catch (e) {
       console.error('Login error', e);
@@ -2473,10 +2536,20 @@ ${entry.content}
     }
   }
 
-  function msLogout() {
-    if (msalApp) msalApp.logoutRedirect().catch(() => {});
+  async function msDisconnect() {
+    if (!confirm('Disconnect Microsoft To Do?')) return;
     todoCache = { lists: [], updatedAt: null };
-    showTodosAuthScreen();
+    localStorage.removeItem('todo_cache');
+    if (msalApp) {
+      try {
+        for (const acc of msalApp.getAllAccounts()) {
+          await msalApp.removeAccount(acc);
+        }
+      } catch { /* ignore */ }
+    }
+    msalApp = null;
+    renderSettings();
+    renderTodos();
   }
 
   async function getAccessToken() {
@@ -2525,20 +2598,29 @@ ${entry.content}
     await syncTodos();
   }
 
-  function showTodosAuthScreen() {
-    document.getElementById('todosAuthScreen').style.display = '';
-    document.getElementById('todosMain').style.display = 'none';
-    const saved = getMsClientId();
-    if (saved) document.getElementById('msClientId').value = saved;
+  function showTodosMain() {
+    const m = document.getElementById('todosMain');
+    m.style.display       = 'flex';
+    m.style.flexDirection = 'column';
+    m.style.flex          = '1';
+    m.style.overflow      = 'hidden';
   }
 
-  function showTodosMain() {
-    document.getElementById('todosAuthScreen').style.display = 'none';
-    const m = document.getElementById('todosMain');
-    m.style.display        = 'flex';
-    m.style.flexDirection  = 'column';
-    m.style.flex           = '1';
-    m.style.overflow       = 'hidden';
+  async function toggleTaskImportance(listId, taskId) {
+    const list = todoCache.lists.find(l => l.id === listId);
+    const task = list?.tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const newImportance = task.importance === 'high' ? 'normal' : 'high';
+    task.importance = newImportance;
+    renderTodos();
+    try {
+      const token = await getAccessToken();
+      await graphPatch(`/me/todo/lists/${listId}/tasks/${taskId}`, token, { importance: newImportance });
+      localStorage.setItem('todo_cache', JSON.stringify(todoCache));
+    } catch (e) {
+      task.importance = newImportance === 'high' ? 'normal' : 'high';
+      renderTodos();
+    }
   }
 
   async function syncTodos() {
@@ -2573,8 +2655,9 @@ ${entry.content}
 
   function setTodoFilter(f) {
     todoFilter = f;
-    document.getElementById('tfAll').classList.toggle('active',   f === 'all');
-    document.getElementById('tfToday').classList.toggle('active', f === 'today');
+    document.getElementById('tfAll').classList.toggle('active',       f === 'all');
+    document.getElementById('tfToday').classList.toggle('active',     f === 'today');
+    document.getElementById('tfImportant').classList.toggle('active', f === 'important');
     renderTodos();
   }
 
@@ -2665,125 +2748,137 @@ ${entry.content}
     if (el) el.classList.toggle('collapsed');
   }
 
+  function isTodoConnected() {
+    return !!(msalApp && msalApp.getAllAccounts().length);
+  }
+
   function renderTodos() {
-    if (!msalApp || !msalApp.getAllAccounts().length) {
-      showTodosAuthScreen();
+    if (!isTodoConnected()) {
+      document.getElementById('todosNotConnected').style.display = 'flex';
+      document.getElementById('todosMain').style.display = 'none';
       return;
     }
+    document.getElementById('todosNotConnected').style.display = 'none';
     showTodosMain();
 
     const container = document.getElementById('todosList');
     if (!todoCache.lists.length) {
-      container.innerHTML = '<div class="todos-empty"><div class="todos-empty-icon">📋</div>No lists yet — tap ↻ to sync.</div>';
+      container.innerHTML = '<div class="todos-empty"><div class="todos-empty-icon">📋</div>No tasks yet — tap ↻ to sync.</div>';
       return;
     }
 
     const t = todoTodayStr();
-    let html = '';
+    let listSections = '';
+    let taskCount    = 0;
 
-    if (todoCache.updatedAt) {
-      const d = new Date(todoCache.updatedAt);
-      html += `<div class="todos-last-sync">Synced ${d.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}</div>`;
-    }
-
-    todoCache.lists.forEach(list => {
-      let tasks = list.tasks || [];
-
-      if (todoFilter === 'today') {
-        tasks = tasks.filter(task => {
-          if (task.status === 'completed') return false;
-          const due = task.dueDateTime?.dateTime?.slice(0, 10);
-          return due && due <= t;
+    // For Important + My Day filters: flatten tasks across all lists
+    if (todoFilter === 'today' || todoFilter === 'important') {
+      const allTasks = [];
+      todoCache.lists.forEach(list => {
+        (list.tasks || []).forEach(task => {
+          if (task.status === 'completed') return;
+          if (todoFilter === 'today') {
+            const due = task.dueDateTime?.dateTime?.slice(0, 10);
+            if (!due || due > t) return;
+          }
+          if (todoFilter === 'important' && task.importance !== 'high') return;
+          allTasks.push({ task, list });
         });
-        if (!tasks.length) return; // skip lists with nothing due today
+      });
+
+      if (!allTasks.length) {
+        const msg = todoFilter === 'today' ? 'Nothing due today! 🎉' : 'No important tasks ★';
+        container.innerHTML = `<div class="todos-empty"><div class="todos-empty-icon">${todoFilter === 'today' ? '🎉' : '★'}</div>${msg}</div>`;
+        return;
       }
 
+      listSections = allTasks.map(({ task, list }) => buildTaskRow(task, list.id, t)).join('');
+      container.innerHTML = (todoCache.updatedAt ? `<div class="todos-last-sync">Synced ${new Date(todoCache.updatedAt).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})}</div>` : '') + listSections;
+      return;
+    }
+
+    // All filter — grouped by list
+    todoCache.lists.forEach(list => {
+      const tasks        = list.tasks || [];
       const pendingCount = tasks.filter(tk => tk.status !== 'completed').length;
       const isCollapsed  = collapsedLists.has(list.id);
+      taskCount += pendingCount;
 
-      html += `<div class="todo-list-section ${isCollapsed ? 'collapsed' : ''}" id="tls-${list.id}">`;
-      html += `<div class="todo-list-header" onclick="toggleListCollapse('${list.id}')">
-        <div class="todo-list-name">${escHtml(list.displayName)}</div>
-        <div class="todo-list-count">${pendingCount}</div>
-        <div class="todo-list-chevron">▾</div>
+      listSections += `<div class="todo-list-section ${isCollapsed ? 'collapsed' : ''}" id="tls-${list.id}">
+        <div class="todo-list-header" onclick="toggleListCollapse('${list.id}')">
+          <div class="todo-list-name">${escHtml(list.displayName)}</div>
+          <div class="todo-list-count">${pendingCount}</div>
+          <div class="todo-list-chevron">▾</div>
+        </div>
+        <div class="todo-list-tasks">
+          ${tasks.length
+            ? tasks.map(task => buildTaskRow(task, list.id, t)).join('')
+            : '<div class="todos-empty" style="padding:10px 4px 14px;font-size:13px">✓ All done!</div>'}
+        </div>
       </div>`;
-      html += `<div class="todo-list-tasks">`;
-
-      if (!tasks.length) {
-        html += `<div class="todos-empty" style="padding:10px 4px 14px"><div class="todos-empty-icon" style="font-size:22px">✓</div>All done!</div>`;
-      } else {
-        tasks.forEach(task => {
-          const dueStatus  = taskDueStatus(task);
-          const dueLabel   = formatTaskDue(task);
-          const isComplete = task.status === 'completed';
-          const isHigh     = task.importance === 'high';
-          const subs       = task.checklistItems || [];
-          const subDone    = subs.filter(s => s.isChecked).length;
-
-          let cardCls = 'todo-task-card';
-          if (isComplete)           cardCls += ' completed';
-          else if (dueStatus === 'late')  cardCls += ' overdue';
-          else if (dueStatus === 'today') cardCls += ' due-today';
-
-          html += `<div class="${cardCls}">
-            <div class="todo-check" onclick="toggleTaskComplete('${list.id}','${task.id}')">
-              ${isComplete ? '✓' : ''}
-            </div>
-            <div class="todo-task-body">
-              <div class="todo-task-name">${escHtml(task.title)}</div>
-              <div class="todo-task-meta">
-                ${isHigh ? '<span class="todo-star">★</span>' : ''}
-                ${dueLabel ? `<span class="todo-due-badge ${dueStatus === 'today' ? 'today' : dueStatus === 'late' ? 'late' : ''}">${dueLabel}</span>` : ''}
-                ${subs.length ? `<span class="todo-sub-count">📋 ${subDone}/${subs.length}</span>` : ''}
-              </div>
-              ${subs.length ? `<div class="todo-subtasks">${subs.map(sub => `
-                <div class="todo-sub-item ${sub.isChecked ? 'done-item' : ''}" onclick="toggleSubtask('${list.id}','${task.id}','${sub.id}')">
-                  <div class="todo-sub-check ${sub.isChecked ? 'done' : ''}">${sub.isChecked ? '✓' : ''}</div>
-                  <span class="todo-sub-name">${escHtml(sub.displayName)}</span>
-                </div>`).join('')}</div>` : ''}
-            </div>
-          </div>`;
-        });
-      }
-
-      html += `</div></div>`; // .todo-list-tasks + .todo-list-section
     });
 
-    if (!html || html === `<div class="todos-last-sync">${html.match(/Synced.*?<\/div>/)?.[0] || ''}</div>`) {
-      container.innerHTML = '<div class="todos-empty"><div class="todos-empty-icon">🎉</div>Nothing due today!</div>';
-    } else {
-      container.innerHTML = html;
-    }
+    container.innerHTML =
+      (todoCache.updatedAt ? `<div class="todos-last-sync">Synced ${new Date(todoCache.updatedAt).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})}</div>` : '') +
+      listSections;
+  }
+
+  function buildTaskRow(task, listId, t) {
+    const dueStatus  = taskDueStatus(task);
+    const dueLabel   = formatTaskDue(task);
+    const isComplete = task.status === 'completed';
+    const isHigh     = task.importance === 'high';
+    const subs       = task.checklistItems || [];
+    const subDone    = subs.filter(s => s.isChecked).length;
+
+    let cardCls = 'todo-task-card';
+    if (isComplete)                cardCls += ' completed';
+    else if (dueStatus === 'late') cardCls += ' overdue';
+    else if (dueStatus === 'today') cardCls += ' due-today';
+
+    return `<div class="${cardCls}">
+      <div class="todo-check" onclick="toggleTaskComplete('${listId}','${task.id}')">
+        ${isComplete ? '✓' : ''}
+      </div>
+      <div class="todo-task-body">
+        <div class="todo-task-name">${escHtml(task.title)}</div>
+        <div class="todo-task-meta">
+          ${dueLabel ? `<span class="todo-due-badge ${dueStatus === 'today' ? 'today' : dueStatus === 'late' ? 'late' : ''}">${dueLabel}</span>` : ''}
+          ${subs.length ? `<span class="todo-sub-count">📋 ${subDone}/${subs.length}</span>` : ''}
+        </div>
+        ${subs.length ? `<div class="todo-subtasks">${subs.map(sub => `
+          <div class="todo-sub-item ${sub.isChecked ? 'done-item' : ''}" onclick="toggleSubtask('${listId}','${task.id}','${sub.id}')">
+            <div class="todo-sub-check ${sub.isChecked ? 'done' : ''}">${sub.isChecked ? '✓' : ''}</div>
+            <span class="todo-sub-name">${escHtml(sub.displayName)}</span>
+          </div>`).join('')}</div>` : ''}
+      </div>
+      <div class="todo-task-right">
+        <button class="todo-star-btn ${isHigh ? 'starred' : ''}" onclick="toggleTaskImportance('${listId}','${task.id}')">★</button>
+      </div>
+    </div>`;
   }
 
   async function initTodos() {
     const clientId = getMsClientId();
-    if (!clientId) { showTodosAuthScreen(); return; }
+    if (!clientId) return;
     initMsal(clientId);
 
-    // Must be called on every page load — captures the token after a redirect login
+    // Must be called on every page load to handle redirect login return
     let redirectResult = null;
     try { redirectResult = await msalApp.handleRedirectPromise(); } catch { /* ignore */ }
 
     const accounts = msalApp.getAllAccounts();
-    if (!accounts.length) { showTodosAuthScreen(); return; }
+    if (!accounts.length) return; // not signed in — renderTodos() will show not-connected banner
 
-    // Set user info
-    const acc = accounts[0];
-    document.getElementById('todosUserName').textContent = (acc.name || acc.username || '').split(' ')[0];
-    document.getElementById('todosAvatar').textContent   = (acc.name || acc.username || '?')[0].toUpperCase();
-
-    // Restore cached tasks so the view isn't blank
+    // Restore cached tasks
     try {
       const cached = JSON.parse(localStorage.getItem('todo_cache'));
       if (cached?.lists?.length) todoCache = cached;
     } catch { /* ignore */ }
 
-    // If we just returned from a login redirect, sync immediately
+    // If just returned from login redirect, sync immediately and go to todos tab
     if (redirectResult) {
-      showTodosMain();
-      renderTodos();
-      await syncTodos();
+      go('todos');
     }
   }
 

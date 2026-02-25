@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#6366f1">
   <link rel="manifest" href="manifest.json">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://alcdn.msauth.net/browser/2.39.0/js/msal-browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2/lib/msal-browser.min.js"></script>
   <title>Habits</title>
   <style>
     :root {
@@ -2456,12 +2456,21 @@ ${entry.content}
   }
 
   async function msLogin() {
+    if (typeof msal === 'undefined') {
+      alert('Auth library failed to load. Check your internet connection and refresh.');
+      return;
+    }
     const clientId = document.getElementById('msClientId').value.trim();
     if (!clientId) { alert('Please enter your Azure App Client ID first.'); return; }
     localStorage.setItem('ms_client_id', clientId);
     initMsal(clientId);
-    // Redirect flow — page navigates to Microsoft then comes back
-    await msalApp.loginRedirect({ scopes: ['Tasks.ReadWrite', 'User.Read'] });
+    try {
+      // Redirect flow — page navigates to Microsoft then returns here
+      await msalApp.loginRedirect({ scopes: ['Tasks.ReadWrite', 'User.Read'] });
+    } catch (e) {
+      console.error('Login error', e);
+      alert('Sign-in error: ' + (e.message || JSON.stringify(e)));
+    }
   }
 
   function msLogout() {

@@ -1,6 +1,6 @@
 {
-  "name": "Habit Tracker",
-  "short_name": "Habits",
+  "name": "Patch",
+  "short_name": "Patch",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f1f5f9",

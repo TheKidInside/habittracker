@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Habits">
+  <meta name="apple-mobile-web-app-title" content="Patch">
   <meta name="theme-color" content="#6366f1">
   <link rel="manifest" href="manifest.json">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <title>Habits</title>
+  <title>Patch</title>
   <style>
     :root {
       --green:      #22c55e;
@@ -979,6 +979,8 @@
           <div class="backup-hint">Export saves everything to your Files app. Import restores from a previous backup.</div>
         </div>
 
+        <div id="accountSection" style="margin-top:20px;padding:16px;background:var(--card);border-radius:var(--r);border:1px solid var(--border)"></div>
+
         <div class="legend-block">
           <div class="section-lbl" style="margin:0 0 8px">Legend</div>
           <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div><div><strong>Full</strong> — Completed in full</div></div>
@@ -1176,7 +1178,37 @@
     </div>
   </div>
 
-<script>
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" style="position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center">
+  <div style="font-size:72px;margin-bottom:16px">🩹</div>
+  <div style="font-size:30px;font-weight:800;color:var(--text);margin-bottom:6px">Patch</div>
+  <div style="font-size:14px;color:var(--muted);margin-bottom:48px;line-height:1.6">Your daily habit &amp; identity tracker</div>
+  <button onclick="signInWithGoogle()" style="display:flex;align-items:center;gap:10px;background:#fff;border:2px solid var(--border);border-radius:14px;padding:14px 24px;font-size:15px;font-weight:700;color:var(--text);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08);font-family:inherit">
+    <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+    Sign in with Google
+  </button>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyCvtNLOr12xvzeDCd1fWgB3hVUzfk5X3UU",
+    authDomain: "patch-ec17e.firebaseapp.com",
+    projectId: "patch-ec17e",
+    storageBucket: "patch-ec17e.firebasestorage.app",
+    messagingSenderId: "353420768084",
+    appId: "1:353420768084:web:95c2adc84e35ecdc14cec1"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db   = getFirestore(app);
+  const auth = getAuth(app);
+
   // ── DATA ────────────────────────────────────────────────────────────────────
   const JOURNAL_HABIT = { id: 'h-journal', icon: '📓', name: 'Journal', locked: true };
 
@@ -1201,24 +1233,91 @@
     missed:       'Missed',
   };
 
+  let userDocRef    = null;
+  let unsubSnapshot = null;
+
+  function load(k, fallback) {
+    try { return JSON.parse(localStorage.getItem(k)) ?? fallback; }
+    catch { return fallback; }
+  }
+
+  async function persist() {
+    // Save to LocalStorage for immediate use
+    localStorage.setItem('habits', JSON.stringify(habits));
+    localStorage.setItem('logs',   JSON.stringify(logs));
+    localStorage.setItem('journal', JSON.stringify(journal));
+
+    // Save to Firestore
+    if (userDocRef) {
+      try {
+        await setDoc(userDocRef, { habits, logs, journal, lastUpdated: Date.now() });
+      } catch (e) {
+        console.error("Error syncing to Firestore:", e);
+      }
+    }
+  }
+
   let habits = load('habits', DEFAULT_HABITS);
   // Always ensure the locked Journal habit exists
   if (!habits.find(h => h.id === 'h-journal')) habits.unshift(JOURNAL_HABIT);
   let logs   = load('logs',   {});
+  let journal = load('journal', []);
+
+  // Auth state drives data loading and realtime sync
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { showLoginScreen(); return; }
+    hideLoginScreen();
+
+    userDocRef = doc(db, "users", user.uid);
+
+    // Load cloud data on sign-in
+    try {
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.habits)  habits  = data.habits;
+        if (data.logs)    logs    = data.logs;
+        if (data.journal) journal = data.journal;
+        if (!habits.find(h => h.id === 'h-journal')) habits.unshift(JOURNAL_HABIT);
+        localStorage.setItem('habits',  JSON.stringify(habits));
+        localStorage.setItem('logs',    JSON.stringify(logs));
+        localStorage.setItem('journal', JSON.stringify(journal));
+      } else {
+        // First-time user — push local data to cloud
+        await persist();
+      }
+    } catch (e) {
+      console.warn('Firestore load failed, using local data:', e);
+    }
+
+    // Subscribe to realtime updates
+    if (unsubSnapshot) unsubSnapshot();
+    unsubSnapshot = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.habits)  habits  = data.habits;
+        if (data.logs)    logs    = data.logs;
+        if (data.journal) journal = data.journal;
+        if (!habits.find(h => h.id === 'h-journal')) habits.unshift(JOURNAL_HABIT);
+        const activeViewEl = document.querySelector('.view.active');
+        if (activeViewEl) {
+          const v = activeViewEl.id.replace('view-', '');
+          if (v === 'today')    renderToday();
+          if (v === 'history')  renderCalendar();
+          if (v === 'journal')  renderJournal();
+          if (v === 'settings') renderSettings();
+        }
+      }
+    });
+
+    renderToday();
+  });
 
   const today = new Date();
   let calYear  = today.getFullYear();
   let calMonth = today.getMonth();
   let modalDateKey = null;
 
-  function load(k, fallback) {
-    try { return JSON.parse(localStorage.getItem(k)) ?? fallback; }
-    catch { return fallback; }
-  }
-  function persist() {
-    localStorage.setItem('habits', JSON.stringify(habits));
-    localStorage.setItem('logs',   JSON.stringify(logs));
-  }
   function dateKey(y, m, d) {
     return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
   }
@@ -1450,6 +1549,14 @@
 
   // ── SETTINGS VIEW ───────────────────────────────────────────────────────────
   function renderSettings() {
+    const user      = auth.currentUser;
+    const accountEl = document.getElementById('accountSection');
+    if (accountEl && user) {
+      accountEl.innerHTML = `
+        <div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Account</div>
+        <div style="font-size:14px;color:var(--text);margin-bottom:14px">${user.displayName || user.email || 'Signed in'}</div>
+        <button onclick="doSignOut()" style="background:var(--grey-bg);color:var(--grey-txt);border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Sign Out</button>`;
+    }
     document.getElementById('settingsList').innerHTML = habits.length
       ? habits.map(h => `
           <div class="settings-row">
@@ -1514,7 +1621,6 @@
         // Ensure locked journal habit is always present
         if (!habits.find(h => h.id === 'h-journal')) habits.unshift(JOURNAL_HABIT);
         persist();
-        localStorage.setItem('journal', JSON.stringify(journal));
         renderSettings();
         alert('Backup restored successfully.');
       } catch {
@@ -1541,7 +1647,6 @@
     { emoji: '⭐', text: "What's the best thing that happened today?", tag: 'log'        },
   ];
 
-  let journal         = load('journal', []);
   let activePromptIdx = null;
   let currentLang     = 'en-US';
   let recognition          = null;
@@ -1747,7 +1852,7 @@ ${entry.content}
         folder.file(sanitizeFilename(entry.title) + '.md', generateMd(entry));
         entry.exported = true;
       });
-      localStorage.setItem('journal', JSON.stringify(journal));
+      persist();
       const blob = await zip.generateAsync({ type: 'blob' });
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
@@ -1769,7 +1874,7 @@ ${entry.content}
         URL.revokeObjectURL(url);
         entry.exported = true;
       }
-      localStorage.setItem('journal', JSON.stringify(journal));
+      persist();
     }
 
     toggleSelectionMode();
@@ -2046,7 +2151,6 @@ ${entry.content}
       customTags: stdTagEntry ? creationTags.filter(t => t !== stdTagEntry) : [...creationTags],
     };
     journal.unshift(entry);
-    localStorage.setItem('journal', JSON.stringify(journal));
 
     // Auto-tick the Journal habit for the entry's date
     const entryLog = getLog(entryDate);
@@ -2095,7 +2199,7 @@ ${entry.content}
   function deleteEntry() {
     if (!confirm('Delete this entry?')) return;
     journal = journal.filter(e => e.id !== currentDetailId);
-    localStorage.setItem('journal', JSON.stringify(journal));
+    persist();
     closeEntryDetail();
     renderJournal();
   }
@@ -2127,7 +2231,7 @@ ${entry.content}
       return;
     }
     entry.customTags.push({ label, category: cat });
-    localStorage.setItem('journal', JSON.stringify(journal));
+    persist();
     document.getElementById('tagLabelInput').value = '';
     renderDetailTags();
     renderJournal();
@@ -2137,7 +2241,7 @@ ${entry.content}
     const entry = journal.find(e => e.id === currentDetailId);
     if (!entry || !entry.customTags) return;
     entry.customTags.splice(idx, 1);
-    localStorage.setItem('journal', JSON.stringify(journal));
+    persist();
     renderDetailTags();
     renderJournal();
   }
@@ -2165,7 +2269,7 @@ ${entry.content}
     entry.content  = content;
     entry.title    = title || generateTitle(content);
     entry.date     = newDate;
-    localStorage.setItem('journal', JSON.stringify(journal));
+    persist();
 
     // Tick journal habit for new date
     const newLog = getLog(newDate);
@@ -2205,23 +2309,57 @@ ${entry.content}
     a.click();
     URL.revokeObjectURL(url);
     entry.exported = true;
-    localStorage.setItem('journal', JSON.stringify(journal));
+    persist();
     // Update meta line to show exported
     document.getElementById('detailMeta').textContent =
       formatEntryDate(entry.date) + ' · ' + entry.prompt + ' · exported';
     renderJournal();
   }
 
+  // ── AUTH ────────────────────────────────────────────────────────────────────
+  function showLoginScreen() {
+    document.getElementById('loginScreen').style.display = 'flex';
+  }
+
+  function hideLoginScreen() {
+    document.getElementById('loginScreen').style.display = 'none';
+  }
+
+  function signInWithGoogle() {
+    signInWithPopup(auth, new GoogleAuthProvider())
+      .catch(e => alert('Sign in failed: ' + e.message));
+  }
+
+  function doSignOut() {
+    if (unsubSnapshot) { unsubSnapshot(); unsubSnapshot = null; }
+    userDocRef = null;
+    signOut(auth);
+  }
+
   // ── INIT ────────────────────────────────────────────────────────────────────
   (function init() {
     document.getElementById('hEye').textContent =
       today.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    renderToday();
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
     }
   })();
+
+  // Attach functions to window for HTML event handlers
+  Object.assign(window, {
+    go, adjJDI, cycleHabit, changeMonth, openModal, cycleModalHabit,
+    signInWithGoogle, doSignOut,
+    adjModalJDI, closeModal, handleOverlayClick, addHabit, removeHabit,
+    exportBackup, importBackup, toggleSelectionMode, toggleSearch,
+    exportSelected, openNewEntry, closeNewEntry, showStep, selectPrompt,
+    selectBlankEntry, setLang, toggleRecording, startRecording,
+    pauseRecording, stopRecording, addCreationTag, removeCreationTag,
+    saveEntry, openEntry, closeEntryDetail, handleDetailOverlayClick,
+    deleteEntry, addCustomTag, removeCustomTag, enterEditMode,
+    saveEdit, cancelEdit, exportToObsidian, onTranscriptInput,
+    setCatFilter, setTagFilter, toggleSelectEntry, adjModalJDI
+  });
 </script>
 </body>
 </html>

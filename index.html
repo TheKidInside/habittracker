@@ -873,6 +873,95 @@
     }
     .btn-import:active { opacity: .85; }
     .backup-hint { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+
+    /* ── WORKOUT VIEW ── */
+    #view-workout { position: relative; }
+    .workout-scroll {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 14px 14px 24px;
+    }
+    .wkt-action-bar {
+      flex-shrink: 0; padding: 8px 14px 12px;
+      background: var(--bg); border-top: 1px solid var(--border);
+    }
+    .wkt-rest-chip {
+      position: absolute; bottom: 76px; left: 50%; transform: translateX(-50%);
+      background: var(--text); color: var(--card);
+      border-radius: 99px; padding: 8px 20px;
+      font-size: 13px; font-weight: 700; letter-spacing: .02em;
+      box-shadow: 0 4px 16px rgba(0,0,0,.2); white-space: nowrap;
+      pointer-events: none; display: none; z-index: 10;
+    }
+    .wkt-rest-chip.visible { display: block; }
+    .wkt-day-header {
+      background: var(--card); border-radius: var(--r);
+      padding: 14px 16px; margin-bottom: 10px;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    }
+    .wkt-day-label { font-size: 11px; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 2px; }
+    .wkt-day-name  { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1.1; }
+    .wkt-day-focus { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .wkt-progress-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .wkt-progress-bar  { flex: 1; height: 5px; border-radius: 99px; background: var(--border); overflow: hidden; }
+    .wkt-progress-fill { height: 100%; border-radius: 99px; background: var(--purple); transition: width .3s; }
+    .wkt-progress-lbl  { font-size: 11px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+    .wkt-activation {
+      background: var(--purple-bg); border-radius: 12px;
+      padding: 10px 14px; margin-bottom: 12px;
+    }
+    .wkt-act-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--purple-txt); margin-bottom: 3px; }
+    .wkt-act-list  { font-size: 12px; color: var(--purple-txt); line-height: 1.65; }
+    .ex-card { background: var(--card); border-radius: var(--r); padding: 13px 14px 6px; margin-bottom: 10px; transition: opacity .2s; }
+    .ex-card.done { opacity: 0.55; }
+    .ex-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .ex-meta { font-size: 11px; color: var(--muted); margin-top: 2px; margin-bottom: 6px; }
+    .ex-cue  { font-size: 11px; color: var(--purple); font-style: italic; margin-bottom: 8px; }
+    .set-row {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 0; border-top: 1px solid var(--border);
+      user-select: none; transition: opacity .15s;
+    }
+    .set-row.done { opacity: 0.4; }
+    .set-label { font-size: 11px; font-weight: 700; color: var(--muted); width: 26px; flex-shrink: 0; }
+    .stp { display: flex; align-items: center; gap: 3px; }
+    .stp-btn {
+      width: 24px; height: 24px; border-radius: 7px;
+      border: 1.5px solid var(--border); background: var(--bg);
+      color: var(--muted); font-size: 14px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-family: inherit; line-height: 1; padding: 0; flex-shrink: 0;
+    }
+    .stp-btn:active { transform: scale(.88); }
+    .stp-val { font-size: 13px; font-weight: 700; color: var(--text); min-width: 40px; text-align: center; }
+    .set-check {
+      width: 26px; height: 26px; border-radius: 50%;
+      border: 2px solid var(--border); background: transparent;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-left: auto; font-size: 12px; font-weight: 800;
+      cursor: pointer; transition: all .15s;
+    }
+    .set-check.checked { background: var(--green); border-color: var(--green); color: #fff; }
+    .wkt-start-btn {
+      width: 100%; padding: 14px;
+      background: var(--purple); color: #fff;
+      border: none; border-radius: 13px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      font-family: inherit; transition: opacity .15s;
+    }
+    .wkt-start-btn:active    { opacity: .88; }
+    .wkt-start-btn:disabled  { opacity: .7; cursor: default; }
+    .wkt-start-btn.ghost     { background: transparent; color: var(--muted); border: 2px solid var(--border); }
+    .wkt-start-btn.finished  { background: var(--green); }
+    .wkt-preview-row {
+      background: var(--card); border-radius: 12px; padding: 11px 14px;
+      margin-bottom: 8px; display: flex; align-items: baseline; justify-content: space-between;
+    }
+    .wkt-preview-name { font-size: 14px; font-weight: 600; color: var(--text); }
+    .wkt-preview-sets { font-size: 11px; color: var(--muted); }
+    .wkt-rest-day { text-align: center; padding: 48px 24px; color: var(--muted); }
+    .wkt-rest-icon  { font-size: 48px; margin-bottom: 12px; }
+    .wkt-rest-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .wkt-rest-sub   { font-size: 13px; line-height: 1.8; }
   </style>
 </head>
 <body>
@@ -992,6 +1081,13 @@
       </div>
     </div>
 
+    <!-- WORKOUT VIEW -->
+    <div class="view" id="view-workout">
+      <div class="workout-scroll" id="workoutScroll"></div>
+      <div class="wkt-action-bar" id="wktActionBar" style="display:none"></div>
+      <div class="wkt-rest-chip" id="wktRestChip"></div>
+    </div>
+
   </div><!-- #app -->
 
   <!-- BOTTOM NAV -->
@@ -1007,6 +1103,10 @@
     <button class="nav-btn" id="nav-journal" onclick="go('journal')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
       Journal
+    </button>
+    <button class="nav-btn" id="nav-workout" onclick="go('workout')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Workout
     </button>
     <button class="nav-btn" id="nav-settings" onclick="go('settings')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -1329,7 +1429,7 @@
   }
 
   // ── NAVIGATION ──────────────────────────────────────────────────────────────
-  const VIEW_TITLES = { today: 'Today', history: 'Calendar', journal: 'Journal', settings: 'Settings' };
+  const VIEW_TITLES = { today: 'Today', history: 'Calendar', journal: 'Journal', workout: 'Workout', settings: 'Settings' };
 
   function go(v) {
     document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
@@ -1340,6 +1440,7 @@
     if (v === 'today')    renderToday();
     if (v === 'history')  renderCalendar();
     if (v === 'journal')  renderJournal();
+    if (v === 'workout')  renderWorkout();
     if (v === 'settings') renderSettings();
   }
 
@@ -2337,6 +2438,305 @@ ${entry.content}
     signOut(auth);
   }
 
+  // ── WORKOUT MODULE ──────────────────────────────────────────────────────────
+
+  const DOW_TO_PLAN_IDX = [6, 0, 1, 2, 3, 4, 5]; // JS getDay(): Sun=0..Sat=6 → plan Mon=0..Sun=6
+
+  const WORKOUT_DAYS = [
+    {
+      id: 'mon', name: 'Monday', label: 'Push', rest: false,
+      focus: 'Chest · Shoulders · Triceps',
+      activation: ['Scapular pushup — 2×10', 'Band pull-apart — 2×15'],
+      core: 'Dead Bug — 3 × 8/side',
+      exercises: [
+        { name: 'DB Floor Press',       sets: 4, repsLabel: '6–8',   w: 22.5, r: 8,  cue: 'Push the dumbbells away from your chest' },
+        { name: 'Half-Kneeling DB OHP', sets: 3, repsLabel: '8–10',  w: 16,   r: 10, cue: 'Push the ceiling away. Ribs down first' },
+        { name: 'DB Lateral Raise',     sets: 3, repsLabel: '12–15', w: 8,    r: 14, cue: 'Lead with the elbow' },
+        { name: 'Deficit Pushup',       sets: 3, repsLabel: 'AMRAP', w: 0,    r: 16, bw: true, cue: 'Push the floor away' },
+        { name: 'OH Tricep Extension',  sets: 3, repsLabel: '10–12', w: 14,   r: 12, cue: 'Elbows pinned by ears' },
+      ],
+    },
+    {
+      id: 'tue', name: 'Tuesday', label: 'Pull', rest: false,
+      focus: 'Back · Biceps',
+      activation: ['Scap pull-down — 2×10', 'Band pull-apart — 2×15'],
+      core: 'KB Suitcase Hold — 3 × 30s/side',
+      exercises: [
+        { name: 'DB Bent-Over Row',  sets: 4, repsLabel: '8–10',  w: 24, r: 10, cue: 'Elbows down and back to your back pockets' },
+        { name: 'Renegade Row',      sets: 3, repsLabel: '8/side', w: 16, r: 8,  cue: "Hips square — don't twist" },
+        { name: 'DB Floor Pullover', sets: 3, repsLabel: '10–12', w: 18, r: 12, cue: 'Pull back over with your armpits' },
+        { name: 'DB Hammer Curl',    sets: 3, repsLabel: '10–12', w: 12, r: 12, cue: 'Thumb to shoulder, palms facing' },
+        { name: 'Standing DB Curl',  sets: 3, repsLabel: '10–12', w: 10, r: 12, cue: 'Pinky to shoulder — supinate hard' },
+        { name: 'DB Rear Delt Fly',  sets: 3, repsLabel: '12–15', w: 7,  r: 14, cue: 'Elbows out at shoulder height' },
+      ],
+    },
+    {
+      id: 'wed', name: 'Wednesday', label: 'Rest', rest: true,
+      focus: 'Mid-week recovery',
+      notes: ['Walk 8–10k steps', 'GTG pushups · 30', 'GTG curls · 20', 'Mobility if tight'],
+      exercises: [],
+    },
+    {
+      id: 'thu', name: 'Thursday', label: 'Legs', rest: false,
+      focus: 'Quad · Glute focus',
+      activation: ['Clamshell — 2×15/side', 'Band lateral walk — 2×10', 'Glute bridge — 2×15'],
+      core: 'Plank — 3 × 30–45s',
+      exercises: [
+        { name: 'Goblet Squat',          sets: 4, repsLabel: '8–10',  w: 24, r: 10, tempo: '3-sec descent', cue: 'Spread the floor — knees over middle toes' },
+        { name: 'Bulgarian Split Squat', sets: 3, repsLabel: '8/leg', w: 16, r: 8,  tempo: '3-sec descent', cue: 'Push through the front heel' },
+        { name: 'KB Step-Up',            sets: 3, repsLabel: '8/leg', w: 16, r: 8,  cue: "Top foot's heel — bottom foot doesn't help" },
+        { name: 'Glute Bridge + DB',     sets: 3, repsLabel: '12–15', w: 20, r: 14, cue: 'Heels through the floor, hips to ceiling' },
+        { name: 'DB Romanian Deadlift',  sets: 3, repsLabel: '10–12', w: 26, r: 12, cue: 'Hips back toward the wall behind you' },
+        { name: 'Standing Calf Raise',   sets: 3, repsLabel: '15–20', w: 20, r: 18, cue: 'Push the floor away with the ball of the foot' },
+      ],
+    },
+    {
+      id: 'fri', name: 'Friday', label: 'Upper', rest: false,
+      focus: 'Push + Pull rebalance',
+      activation: ['Scapular pushup — 2×10', 'Band pull-apart — 2×15'],
+      core: 'Dead Bug — 3 × 10/side',
+      exercises: [
+        { name: 'DB Floor Press',         sets: 3, repsLabel: '10–12',    w: 20, r: 12, cue: 'Lighter than Monday — higher rep' },
+        { name: 'Single-Arm DB Row',      sets: 4, repsLabel: '10–12/side', w: 22, r: 12, cue: 'Elbow down and back' },
+        { name: 'Half-Kneeling DB OHP',   sets: 3, repsLabel: '10–12',    w: 14, r: 12, cue: 'Ribs down before the press' },
+        { name: 'Deficit Pushup',         sets: 3, repsLabel: 'AMRAP',    w: 0,  r: 15, bw: true, cue: 'Bottom stretch in the pec' },
+        { name: 'DB Hammer Curl',         sets: 3, repsLabel: '10–12',    w: 12, r: 12, cue: 'Same as Tuesday' },
+        { name: 'OH Tricep Extension',    sets: 3, repsLabel: '10–12',    w: 14, r: 12, cue: 'Same as Monday' },
+        { name: 'DB Lateral Raise',       sets: 3, repsLabel: '12–15',    w: 8,  r: 14, cue: 'Drop set on the last set' },
+      ],
+    },
+    {
+      id: 'sat', name: 'Saturday', label: 'Lower', rest: false,
+      focus: 'Hinge focus · back-friendly',
+      activation: ['Clamshell — 2×15/side', 'Band lateral walk — 2×10', 'Glute bridge — 2×15'],
+      core: 'Dead Bug — 3 × 10/side',
+      exercises: [
+        { name: 'DB Romanian Deadlift',   sets: 4, repsLabel: '8–10',  w: 28, r: 10, tempo: '3-sec descent', cue: 'Hips back. Knees nearly locked' },
+        { name: 'Goblet Squat',           sets: 3, repsLabel: '12–15', w: 20, r: 14, tempo: '3-sec descent', cue: 'Lighter than Thursday' },
+        { name: 'Single-Leg DB RDL',      sets: 3, repsLabel: '8/leg', w: 12, r: 8,  cue: 'Standing hip back, floating leg behind' },
+        { name: 'Glute Bridge · 2s hold', sets: 3, repsLabel: '12–15', w: 20, r: 14, cue: 'Max-squeeze at the top' },
+        { name: "KB Farmer's Carry",      sets: 3, repsLabel: '30–40m', w: 24, r: 35, carry: true, cue: 'Stand tall. Ribs down. No waddle' },
+      ],
+    },
+    {
+      id: 'sun', name: 'Sunday', label: 'Rest', rest: true,
+      focus: 'Weekend recovery',
+      notes: ['Walk if the mood is there', 'GTG pushups · 30', 'GTG curls · 20', 'Sunday log: weight avg · waist · photo'],
+      exercises: [],
+    },
+  ];
+
+  let wktRestInterval = null;
+  let wktRestSecs     = 0;
+
+  function getTodayWorkoutDay() {
+    return WORKOUT_DAYS[DOW_TO_PLAN_IDX[new Date().getDay()]];
+  }
+
+  function getWorkoutLog() {
+    const log = getLog(todayKey());
+    if (!log.workout) log.workout = { active: false, finished: false, completed: {}, weights: {}, reps: {} };
+    return log.workout;
+  }
+
+  function wktSetWeight(wkt, day, ei, si) {
+    return (wkt.weights[ei] != null && wkt.weights[ei][si] != null) ? wkt.weights[ei][si] : day.exercises[ei].w;
+  }
+
+  function wktSetReps(wkt, day, ei, si) {
+    return (wkt.reps[ei] != null && wkt.reps[ei][si] != null) ? wkt.reps[ei][si] : day.exercises[ei].r;
+  }
+
+  function isSetDone(wkt, ei, si) {
+    return !!(wkt.completed[ei] && wkt.completed[ei][si]);
+  }
+
+  function startRestTimer(secs) {
+    clearInterval(wktRestInterval);
+    wktRestSecs = secs;
+    const chip = document.getElementById('wktRestChip');
+    if (!chip) return;
+    chip.classList.add('visible');
+    updateRestChip();
+    wktRestInterval = setInterval(() => {
+      wktRestSecs--;
+      if (wktRestSecs <= 0) {
+        clearInterval(wktRestInterval);
+        if (chip) chip.classList.remove('visible');
+      } else {
+        updateRestChip();
+      }
+    }, 1000);
+  }
+
+  function updateRestChip() {
+    const chip = document.getElementById('wktRestChip');
+    if (!chip) return;
+    const m = Math.floor(wktRestSecs / 60);
+    const s = String(wktRestSecs % 60).padStart(2, '0');
+    chip.textContent = `Rest ${m}:${s}`;
+  }
+
+  function toggleWorkoutSet(ei, si) {
+    const wkt = getWorkoutLog();
+    const day = getTodayWorkoutDay();
+    if (!day.exercises[ei]) return;
+    const ex  = day.exercises[ei];
+    const arr = [...(wkt.completed[ei] || Array(ex.sets).fill(false))];
+    const turningOn = !arr[si];
+    arr[si] = turningOn;
+    wkt.completed = { ...wkt.completed, [ei]: arr };
+    if (turningOn) startRestTimer(90);
+    persist();
+    renderWorkout();
+  }
+
+  function adjWorkoutWeight(ei, si, delta) {
+    const wkt = getWorkoutLog();
+    const day = getTodayWorkoutDay();
+    const ex  = day.exercises[ei];
+    const arr = [...(wkt.weights[ei] || Array(ex.sets).fill(ex.w))];
+    arr[si] = Math.max(0, (arr[si] ?? ex.w) + delta);
+    wkt.weights = { ...wkt.weights, [ei]: arr };
+    persist();
+    renderWorkout();
+  }
+
+  function adjWorkoutReps(ei, si, delta) {
+    const wkt = getWorkoutLog();
+    const day = getTodayWorkoutDay();
+    const ex  = day.exercises[ei];
+    const arr = [...(wkt.reps[ei] || Array(ex.sets).fill(ex.r))];
+    arr[si] = Math.max(1, (arr[si] ?? ex.r) + delta);
+    wkt.reps = { ...wkt.reps, [ei]: arr };
+    persist();
+    renderWorkout();
+  }
+
+  function startWorkout() {
+    const wkt = getWorkoutLog();
+    if (!wkt.active) { wkt.active = true; persist(); }
+    renderWorkout();
+  }
+
+  function finishWorkout() {
+    const wkt = getWorkoutLog();
+    wkt.finished = true;
+    clearInterval(wktRestInterval);
+    const chip = document.getElementById('wktRestChip');
+    if (chip) chip.classList.remove('visible');
+    persist();
+    renderWorkout();
+  }
+
+  function renderWorkout() {
+    const scroll    = document.getElementById('workoutScroll');
+    const actionBar = document.getElementById('wktActionBar');
+    if (!scroll) return;
+
+    const day = getTodayWorkoutDay();
+    const wkt = getWorkoutLog();
+
+    if (day.rest) {
+      scroll.innerHTML = `
+        <div class="wkt-rest-day">
+          <div class="wkt-rest-icon">🛌</div>
+          <div class="wkt-rest-title">${day.name} — ${day.label}</div>
+          <div class="wkt-rest-sub">${escHtml(day.focus)}${day.notes ? '<br><br>' + day.notes.map(escHtml).join('<br>') : ''}</div>
+        </div>`;
+      if (actionBar) actionBar.style.display = 'none';
+      return;
+    }
+
+    const totalSets = day.exercises.reduce((a, ex) => a + ex.sets, 0);
+    const doneSets  = day.exercises.reduce((a, ex, ei) =>
+      a + (wkt.completed[ei] || []).filter(Boolean).length, 0);
+    const allDone = doneSets >= totalSets;
+    const pct     = totalSets ? Math.round((doneSets / totalSets) * 100) : 0;
+
+    let html = `
+      <div class="wkt-day-header">
+        <div>
+          <div class="wkt-day-label">${escHtml(day.label)}</div>
+          <div class="wkt-day-name">${escHtml(day.name)}</div>
+          <div class="wkt-day-focus">${escHtml(day.focus)}</div>
+        </div>
+        <div style="text-align:right;padding-top:2px">
+          <div style="font-size:24px;font-weight:800;color:var(--purple);line-height:1">${doneSets}</div>
+          <div style="font-size:11px;color:var(--muted)">of ${totalSets} sets</div>
+        </div>
+      </div>
+      <div class="wkt-progress-wrap">
+        <div class="wkt-progress-bar"><div class="wkt-progress-fill" style="width:${pct}%"></div></div>
+        <span class="wkt-progress-lbl">${pct}%</span>
+      </div>`;
+
+    if (day.activation && day.activation.length) {
+      html += `<div class="wkt-activation">
+        <div class="wkt-act-label">Activation</div>
+        <div class="wkt-act-list">${day.activation.map(escHtml).join(' &nbsp;&middot;&nbsp; ')}</div>
+      </div>`;
+    }
+
+    if (wkt.active || wkt.finished) {
+      day.exercises.forEach((ex, ei) => {
+        const exDoneSets = (wkt.completed[ei] || []).filter(Boolean).length;
+        const exAllDone  = exDoneSets >= ex.sets;
+        html += `<div class="ex-card${exAllDone ? ' done' : ''}">
+          <div class="ex-name">${escHtml(ex.name)}</div>
+          <div class="ex-meta">${ex.sets} sets · ${escHtml(ex.repsLabel)}${ex.tempo ? ' · ' + escHtml(ex.tempo) : ''}${ex.bw ? ' · BW' : ''}</div>`;
+        if (ex.cue) html += `<div class="ex-cue">${escHtml(ex.cue)}</div>`;
+        for (let si = 0; si < ex.sets; si++) {
+          const done = isSetDone(wkt, ei, si);
+          const w    = wktSetWeight(wkt, day, ei, si);
+          const r    = wktSetReps(wkt, day, ei, si);
+          html += `<div class="set-row${done ? ' done' : ''}">
+            <span class="set-label">S${si + 1}</span>`;
+          if (!ex.bw) {
+            html += `<div class="stp">
+              <button class="stp-btn" onclick="event.stopPropagation();adjWorkoutWeight(${ei},${si},-2)">−</button>
+              <span class="stp-val">${w}kg</span>
+              <button class="stp-btn" onclick="event.stopPropagation();adjWorkoutWeight(${ei},${si},2)">+</button>
+            </div>`;
+          } else {
+            html += `<span style="font-size:12px;color:var(--muted);min-width:60px;text-align:center">BW</span>`;
+          }
+          html += `<div class="stp" style="margin-left:4px">
+              <button class="stp-btn" onclick="event.stopPropagation();adjWorkoutReps(${ei},${si},-1)">−</button>
+              <span class="stp-val">×${r}${ex.carry ? 'm' : ''}</span>
+              <button class="stp-btn" onclick="event.stopPropagation();adjWorkoutReps(${ei},${si},1)">+</button>
+            </div>
+            <div class="set-check${done ? ' checked' : ''}" onclick="toggleWorkoutSet(${ei},${si})">${done ? '✓' : ''}</div>
+          </div>`;
+        }
+        html += `</div>`;
+      });
+      if (day.core) {
+        html += `<div style="text-align:center;font-size:12px;color:var(--muted);padding:6px 0 4px">Finisher &nbsp;·&nbsp; ${escHtml(day.core)}</div>`;
+      }
+    } else {
+      day.exercises.forEach(ex => {
+        html += `<div class="wkt-preview-row">
+          <span class="wkt-preview-name">${escHtml(ex.name)}</span>
+          <span class="wkt-preview-sets">${ex.sets} × ${escHtml(ex.repsLabel)}</span>
+        </div>`;
+      });
+    }
+
+    scroll.innerHTML = html;
+
+    if (actionBar) {
+      actionBar.style.display = '';
+      if (wkt.finished) {
+        actionBar.innerHTML = `<button class="wkt-start-btn finished" disabled>Workout complete ✓</button>`;
+      } else if (wkt.active) {
+        actionBar.innerHTML = `<button class="wkt-start-btn${allDone ? '' : ' ghost'}" onclick="finishWorkout()">${allDone ? 'Finish workout' : 'End early'}</button>`;
+      } else {
+        actionBar.innerHTML = `<button class="wkt-start-btn" onclick="startWorkout()">Start workout</button>`;
+      }
+    }
+  }
+
   // ── INIT ────────────────────────────────────────────────────────────────────
   (function init() {
     document.getElementById('hEye').textContent =
@@ -2359,7 +2759,8 @@ ${entry.content}
     saveEntry, openEntry, closeEntryDetail, handleDetailOverlayClick,
     deleteEntry, addCustomTag, removeCustomTag, enterEditMode,
     saveEdit, cancelEdit, exportToObsidian, onTranscriptInput,
-    setCatFilter, setTagFilter, toggleSelectEntry, adjModalJDI
+    setCatFilter, setTagFilter, toggleSelectEntry, adjModalJDI,
+    startWorkout, finishWorkout, toggleWorkoutSet, adjWorkoutWeight, adjWorkoutReps,
   });
 </script>
 </body>

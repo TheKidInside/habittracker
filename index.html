@@ -1315,12 +1315,12 @@
 
   const DEFAULT_HABITS = [
     JOURNAL_HABIT,
-    { id: 'h-halt',      icon: '🛑', name: 'Morning HALT Check' },
+    { id: 'h-halt',      icon: '📖', name: 'Bible Reading' },
     { id: 'h-prayer',    icon: '🙏', name: 'Morning Prayer' },
     { id: 'h-one-lever', icon: '🎯', name: 'One Lever ID' },
     { id: 'h-never-zero',icon: '🔥', name: 'Never Zero' },
-    { id: 'h-toddler',   icon: '👨‍👦', name: 'Special Time (Toddler)' },
-    { id: 'h-invisible', icon: '🏠', name: 'Invisible Task Done' },
+    { id: 'h-toddler',   icon: '💪', name: 'Push-ups' },
+    { id: 'h-invisible', icon: '🧘', name: 'Patience' },
     { id: 'h-name-it',   icon: '🏷️', name: 'Name It to Tame It' },
     { id: 'h-audit',     icon: '📋', name: 'Evening Audit' },
   ];
@@ -1358,7 +1358,24 @@
     }
   }
 
+  const HABIT_RENAMES = {
+    'h-halt':      { name: 'Bible Reading', icon: '📖' },
+    'h-toddler':   { name: 'Push-ups',      icon: '💪' },
+    'h-invisible': { name: 'Patience',      icon: '🧘' },
+  };
+  function migrateHabitNames(habitList) {
+    let dirty = false;
+    habitList.forEach(h => {
+      const m = HABIT_RENAMES[h.id];
+      if (m && (h.name !== m.name || h.icon !== m.icon)) {
+        h.name = m.name; h.icon = m.icon; dirty = true;
+      }
+    });
+    return dirty;
+  }
+
   let habits = load('habits', DEFAULT_HABITS);
+  migrateHabitNames(habits);
   // Always ensure the locked Journal habit exists
   if (!habits.find(h => h.id === 'h-journal')) habits.unshift(JOURNAL_HABIT);
   let logs   = load('logs',   {});
@@ -1380,6 +1397,7 @@
         if (data.logs)    logs    = data.logs;
         if (data.journal) journal = data.journal;
         if (!habits.find(h => h.id === 'h-journal')) habits.unshift(JOURNAL_HABIT);
+        if (migrateHabitNames(habits)) await persist();
         localStorage.setItem('habits',  JSON.stringify(habits));
         localStorage.setItem('logs',    JSON.stringify(logs));
         localStorage.setItem('journal', JSON.stringify(journal));
@@ -1400,6 +1418,7 @@
         if (data.logs)    logs    = data.logs;
         if (data.journal) journal = data.journal;
         if (!habits.find(h => h.id === 'h-journal')) habits.unshift(JOURNAL_HABIT);
+        migrateHabitNames(habits);
         const activeViewEl = document.querySelector('.view.active');
         if (activeViewEl) {
           const v = activeViewEl.id.replace('view-', '');

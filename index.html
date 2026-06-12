@@ -6,31 +6,32 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Patch">
-  <meta name="theme-color" content="#6366f1">
+  <meta name="theme-color" content="#c9952c">
   <link rel="apple-touch-icon" href="icon-180.png">
   <link rel="manifest" href="manifest.json">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <title>Patch</title>
   <style>
     :root {
-      --green:      #22c55e;
-      --green-bg:   #dcfce7;
-      --green-txt:  #15803d;
+      /* Paper · Warm Editorial — amber/gold primary */
+      --green:      #5f7a5f;
+      --green-bg:   #eaf0e8;
+      --green-txt:  #3d5a3d;
       --orange:     #f97316;
-      --orange-bg:  #ffedd5;
-      --orange-txt: #c2410c;
+      --orange-bg:  #fef3e2;
+      --orange-txt: #9a4d0a;
       --grey:       #9ca3af;
-      --grey-bg:    #f3f4f6;
-      --grey-txt:   #6b7280;
-      --purple:     #6366f1;
-      --purple-bg:  #ede9fe;
-      --purple-txt: #4338ca;
-      --bg:         #f1f5f9;
-      --card:       #ffffff;
-      --text:       #0f172a;
-      --muted:      #64748b;
-      --border:     #e2e8f0;
-      --r:          16px;
+      --grey-bg:    #f0ede8;
+      --grey-txt:   #6b6460;
+      --purple:     #c9952c;
+      --purple-bg:  #fef6e4;
+      --purple-txt: #8b6020;
+      --bg:         #faf9f6;
+      --card:       #fffcf5;
+      --text:       #1f2328;
+      --muted:      #9ca3af;
+      --border:     #e7e4db;
+      --r:          14px;
       --header-h:   76px;
       --nav-h:      68px;
     }
@@ -100,28 +101,23 @@
     .jdi-bar {
       flex-shrink: 0;
       background: var(--purple-bg);
-      border-bottom: 1px solid #ddd6fe;
-      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 14px;
       display: flex;
       align-items: center;
       gap: 12px;
     }
     .jdi-bar-label {
       flex: 1;
-      font-size: 13px; font-weight: 700;
+      font-size: 12px; font-weight: 700;
       text-transform: uppercase; letter-spacing: .06em;
       color: var(--purple-txt);
     }
-    .jdi-bar-label span {
-      display: block;
-      font-size: 11px; font-weight: 500;
-      text-transform: none; letter-spacing: 0;
-      color: var(--purple); margin-top: 1px;
-    }
-    .jdi-controls { display: flex; align-items: center; gap: 10px; }
+    .jdi-bar-label span { display: none; }
+    .jdi-controls { display: flex; align-items: center; gap: 8px; }
     .jdi-num {
-      font-size: 38px; font-weight: 900; color: var(--purple);
-      min-width: 48px; text-align: center; line-height: 1;
+      font-size: 28px; font-weight: 900; color: var(--purple);
+      min-width: 36px; text-align: center; line-height: 1;
     }
     .jdi-btn {
       border: none; border-radius: 50%; cursor: pointer;
@@ -129,9 +125,9 @@
       font-weight: 800; transition: transform .1s;
     }
     .jdi-btn:active { transform: scale(.88); }
-    .jdi-minus { width: 38px; height: 38px; font-size: 20px; background: #c7d2fe; color: var(--purple-txt); }
-    .jdi-plus  { width: 48px; height: 48px; font-size: 26px; background: var(--purple); color: #fff;
-                 box-shadow: 0 3px 12px rgba(99,102,241,.4); }
+    .jdi-minus { width: 30px; height: 30px; font-size: 16px; background: var(--purple-bg); color: var(--purple-txt); }
+    .jdi-plus  { width: 38px; height: 38px; font-size: 22px; background: var(--purple); color: #fff;
+                 box-shadow: 0 2px 8px rgba(201,149,44,.35); }
 
     /* ── TODAY SCROLL AREA ── */
     .today-scroll {
@@ -144,14 +140,14 @@
     /* ── SUMMARY STRIP ── */
     .summary-strip {
       flex-shrink: 0;
-      display: flex; gap: 8px;
-      padding: 10px 14px;
+      display: flex; gap: 6px;
+      padding: 6px 12px;
       background: var(--card);
       border-bottom: 1px solid var(--border);
     }
-    .s-pill { flex: 1; border-radius: 12px; padding: 10px 6px; text-align: center; }
-    .s-pill-num { font-size: 24px; font-weight: 800; line-height: 1; }
-    .s-pill-lbl { font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; margin-top: 2px; }
+    .s-pill { flex: 1; border-radius: 10px; padding: 7px 4px; text-align: center; }
+    .s-pill-num { font-size: 20px; font-weight: 800; line-height: 1; }
+    .s-pill-lbl { font-size: 9px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; margin-top: 1px; }
     .sp-full   { background: var(--green-bg);  }
     .sp-full   .s-pill-num, .sp-full .s-pill-lbl   { color: var(--green-txt); }
     .sp-nz     { background: var(--orange-bg); }
@@ -160,45 +156,41 @@
     .sp-missed .s-pill-num, .sp-missed .s-pill-lbl  { color: var(--grey-txt); }
 
     .section-lbl {
-      font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-      color: var(--muted); margin: 16px 2px 9px;
+      font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--muted); margin: 10px 2px 5px;
     }
 
-    .tap-hint { font-size: 12px; color: var(--muted); margin-bottom: 4px; text-align: center; }
+    .tap-hint { font-size: 11px; color: var(--muted); margin-bottom: 3px; text-align: center; }
 
     /* ── HABIT CARD ── */
     .habit-card {
       background: var(--card);
-      border-radius: var(--r);
-      padding: 13px 14px;
-      margin-bottom: 8px;
+      border-radius: 11px;
+      padding: 9px 12px;
+      margin-bottom: 5px;
       display: flex;
-      align-items: flex-start;
-      gap: 11px;
+      align-items: center;
+      gap: 9px;
       cursor: pointer;
-      border: 2.5px solid transparent;
+      border: 2px solid transparent;
       transition: all .12s;
       user-select: none;
     }
     .habit-card:active         { transform: scale(.98); }
     .habit-card.s-full         { background: var(--green-bg);  border-color: var(--green);  }
     .habit-card.s-never-zero   { background: var(--orange-bg); border-color: var(--orange); }
-    .habit-card.s-missed       { background: var(--grey-bg);   border-color: var(--grey); opacity: .75; }
+    .habit-card.s-missed       { background: var(--grey-bg);   border-color: var(--grey); opacity: .72; }
 
-    .hc-icon  { font-size: 26px; width: 34px; text-align: center; flex-shrink: 0; padding-top: 1px; }
+    .hc-icon  { font-size: 18px; width: 24px; text-align: center; flex-shrink: 0; }
     .hc-info  { flex: 1; min-width: 0; }
-    .hc-name  { font-size: 15px; font-weight: 700; word-break: break-word; overflow-wrap: break-word; white-space: normal; line-height: 1.3; }
-    .hc-sub   { font-size: 11px; margin-top: 3px; color: var(--muted); }
-
-    .habit-card.s-full       .hc-sub { color: var(--green-txt); }
-    .habit-card.s-never-zero .hc-sub { color: var(--orange-txt); }
-    .habit-card.s-missed     .hc-sub { color: var(--grey-txt); }
+    .hc-name  { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hc-sub   { display: none; }
 
     .hc-badge {
-      width: 26px; height: 26px; border-radius: 50%;
-      border: 2px solid var(--border);
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 1.5px solid var(--border);
       display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 800; color: #fff; flex-shrink: 0; margin-top: 3px;
+      font-size: 11px; font-weight: 800; color: #fff; flex-shrink: 0;
     }
     .habit-card.s-full       .hc-badge { background: var(--green);  border-color: var(--green);  }
     .habit-card.s-never-zero .hc-badge { background: var(--orange); border-color: var(--orange); }
@@ -353,7 +345,7 @@
       width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
       font-size: 18px; font-weight: 800; display: flex; align-items: center; justify-content: center;
     }
-    .mjdi-minus { background: #c7d2fe; color: var(--purple-txt); }
+    .mjdi-minus { background: var(--purple-bg); color: var(--purple-txt); }
     .mjdi-plus  { background: var(--purple); color: #fff; }
     .mjdi-btn:active { transform: scale(.88); }
 
@@ -444,7 +436,7 @@
       padding: 14px 22px;
       font-size: 15px; font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 4px 16px rgba(99,102,241,.45);
+      box-shadow: 0 4px 16px rgba(201,149,44,.4);
       z-index: 50; font-family: inherit;
       transition: transform .1s;
     }
@@ -683,7 +675,7 @@
       background: var(--purple); color: #fff;
       border-radius: 14px; padding: 13px 18px;
       display: flex; align-items: center; justify-content: space-between;
-      box-shadow: 0 4px 20px rgba(99,102,241,.5); z-index: 60;
+      box-shadow: 0 4px 20px rgba(201,149,44,.45); z-index: 60;
     }
     .bulk-count { font-size: 13px; font-weight: 700; }
     .bulk-export-btn {

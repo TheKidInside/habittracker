@@ -1,4 +1,4 @@
-const CACHE = 'habits-v4';
+const CACHE = 'habits-v5';
 const ASSETS = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -18,6 +18,10 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Never touch the Firebase Auth handler — the redirect sign-in flow navigates
+  // through /__/auth/*, and serving a cached page there kills the round trip.
+  if (new URL(e.request.url).pathname.startsWith('/__/auth/')) return;
+
   if (e.request.destination === 'document') {
     // Network-first for HTML — always try to get fresh content
     e.respondWith(

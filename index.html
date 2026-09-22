@@ -10,6 +10,7 @@
   <link rel="apple-touch-icon" href="icon-180.png">
   <link rel="manifest" href="manifest.json">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
   <title>Patch</title>
   <style>
     :root {
@@ -954,6 +955,149 @@
     .wkt-rest-icon  { font-size: 48px; margin-bottom: 12px; }
     .wkt-rest-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
     .wkt-rest-sub   { font-size: 13px; line-height: 1.8; }
+
+    /* ── DRAG / SORTABLE (all viewports) ── */
+    .drag-grip {
+      flex-shrink: 0;
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); opacity: .55;
+      font-size: 14px; line-height: 1;
+      cursor: grab; user-select: none; touch-action: none;
+    }
+    .drag-grip:active { cursor: grabbing; }
+    .drag-grip svg { width: 14px; height: 14px; pointer-events: none; }
+    .sortable-ghost      { opacity: 0.35; }
+    .sortable-chosen     { box-shadow: 0 6px 18px rgba(15,23,42,.18); }
+    .sortable-drag       { opacity: 0.94; }
+    .cal-data-row.sortable-chosen .cal-label-cell { background: var(--purple-bg) !important; }
+    .cal-label-cell.drag-grip-cell { cursor: grab; }
+    .cal-label-cell.drag-grip-cell:active { cursor: grabbing; }
+
+    /* ── DESKTOP VIEW (≥1024px) ── */
+    @media (min-width: 1024px) {
+      html, body { height: 100vh; overflow: hidden; }
+      body {
+        max-width: none;
+        flex-direction: row;
+        align-items: stretch;
+      }
+      .header { display: none; }
+
+      /* Bottom nav → left sidebar */
+      .bottom-nav {
+        order: -1;
+        flex-direction: column;
+        width: 240px; flex-shrink: 0;
+        border-top: none;
+        border-right: 1px solid var(--border);
+        padding: 28px 14px 18px;
+        align-items: stretch;
+        gap: 4px;
+      }
+      .bottom-nav::before {
+        content: 'Patch';
+        font-size: 22px; font-weight: 800;
+        padding: 0 12px 18px;
+        color: var(--text);
+        letter-spacing: -.01em;
+      }
+      .nav-btn {
+        flex: 0 0 auto;
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 14px;
+        padding: 12px 14px;
+        font-size: 13px;
+        border-radius: 12px;
+      }
+      .nav-btn svg { width: 22px; height: 22px; }
+      .nav-btn.active { background: var(--purple-bg); }
+      .nav-btn:hover  { background: var(--bg); }
+      .nav-btn.active:hover { background: var(--purple-bg); }
+
+      /* App area */
+      #app { flex: 1; min-width: 0; }
+      .view { height: 100%; }
+
+      /* Shared padding for view content */
+      .today-scroll,
+      .settings-scroll,
+      .cal-scroll-area,
+      .workout-scroll,
+      .journal-scroll {
+        padding-left: 48px;
+        padding-right: 48px;
+      }
+
+      /* TODAY view — grid layout */
+      .jdi-bar    { padding: 16px 48px; }
+      .jdi-bar-label { font-size: 13px; }
+      .jdi-bar-label span { display: inline; font-size: 11px; font-weight: 600; color: var(--purple-txt); opacity: .8; text-transform: none; letter-spacing: 0; margin-left: 8px; }
+      .summary-strip { padding: 14px 48px; gap: 12px; }
+      .s-pill { padding: 14px 8px; }
+      .s-pill-num { font-size: 32px; }
+      .s-pill-lbl { font-size: 11px; }
+      .today-scroll { padding-top: 24px; padding-bottom: 36px; }
+      .section-lbl { font-size: 11px; margin: 16px 2px 10px; }
+      #habitList {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: 10px;
+      }
+      .habit-card { margin-bottom: 0; padding: 14px 18px; }
+      .hc-icon  { font-size: 22px; width: 28px; }
+      .hc-name  { font-size: 15px; }
+      .hc-badge { width: 26px; height: 26px; font-size: 13px; }
+
+      /* SETTINGS — wide layout */
+      .settings-scroll { padding-top: 24px; padding-bottom: 36px; }
+      #settingsList {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 8px;
+      }
+      .settings-row { margin-bottom: 0; }
+      .add-form, .backup-block, .legend-block { max-width: 640px; }
+      #accountSection { max-width: 640px; }
+
+      /* CALENDAR — bigger cells */
+      .month-nav { padding: 16px 48px; }
+      .cal-scroll-area { padding-top: 18px; padding-left: 0; padding-right: 0; }
+      .cal-legend { padding-left: 48px; padding-right: 48px; }
+      .cal-label-cell { min-width: 200px; max-width: 220px; padding: 0 14px 0 48px; }
+      .cal-label-inner { max-width: 200px; font-size: 14px; gap: 8px; }
+      .cal-label-icon { font-size: 18px; }
+      .cal-cell, .cal-jdi-cell { width: 38px; height: 38px; border-radius: 8px; }
+      .cal-day-th { width: 44px; min-width: 44px; }
+      .cal-day-num-hd { font-size: 12px; }
+      .cal-day-wd-hd  { font-size: 10px; }
+
+      /* MODAL — centered card */
+      .modal-overlay { align-items: center; padding: 24px; }
+      .modal-sheet {
+        border-radius: 18px;
+        max-width: 560px; margin: 0 auto;
+        max-height: 80vh;
+        transform: translateY(20px) scale(.94);
+        opacity: 0;
+        transition: opacity .2s, transform .26s cubic-bezier(.32,1,.23,1);
+      }
+      .modal-overlay.open .modal-sheet { transform: translateY(0) scale(1); opacity: 1; }
+
+      /* JOURNAL & WORKOUT centered */
+      .workout-scroll { max-width: 960px; margin: 0 auto; padding-top: 24px; }
+      .journal-scroll { max-width: 960px; margin: 0 auto; }
+      .journal-toolbar { max-width: 960px; margin: 0 auto; padding-left: 48px; padding-right: 48px; }
+      .search-panel    { padding-left: 48px; padding-right: 48px; }
+      .bulk-export-bar { max-width: 960px; left: 50%; transform: translateX(-50%); }
+      .journal-fab     { right: 48px; }
+
+      .drag-grip { opacity: .6; }
+      .habit-card:hover .drag-grip,
+      .settings-row:hover .drag-grip,
+      .modal-habit-row:hover .drag-grip { opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -1280,12 +1424,15 @@
     <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
     Sign in with Google
   </button>
+  <div id="loginError" style="display:none;margin-top:20px;max-width:320px;font-size:12px;line-height:1.5;color:#b91c1c;background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.25);border-radius:10px;padding:10px 12px;white-space:pre-wrap;word-break:break-word"></div>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
+           setPersistence, indexedDBLocalPersistence, browserLocalPersistence,
+           onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
   // Your web app's Firebase configuration
   const firebaseConfig = {
@@ -1301,6 +1448,16 @@
   const app = initializeApp(firebaseConfig);
   const db   = getFirestore(app);
   const auth = getAuth(app);
+
+  // iOS keeps a home-screen PWA on a short leash: localStorage can be evicted,
+  // so pin the session to IndexedDB and only fall back if it is unavailable.
+  const authReady = setPersistence(auth, indexedDBLocalPersistence)
+    .catch(() => setPersistence(auth, browserLocalPersistence))
+    .catch(() => {});
+
+  // The redirect flow (the iOS path) lands back here on return — read its
+  // result so a failure shows up instead of silently bouncing to login.
+  authReady.then(() => getRedirectResult(auth)).catch(showAuthError);
 
   // ── DATA ────────────────────────────────────────────────────────────────────
   const JOURNAL_HABIT = { id: 'h-journal', icon: '📓', name: 'Journal', locked: true };
@@ -1439,6 +1596,64 @@
     return logs[dk];
   }
 
+  // ── DRAG-AND-DROP REORDER ───────────────────────────────────────────────────
+  const GRIP_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>';
+
+  // Block grip taps from bubbling up and triggering habit-cycle.
+  document.addEventListener('click', (e) => {
+    if (e.target.closest && e.target.closest('.drag-grip')) {
+      e.stopPropagation();
+    }
+  }, true);
+
+  const _sortableInstances = new WeakMap();
+
+  function initHabitSortable(selector, opts = {}) {
+    if (!window.Sortable) return;
+    const el = document.querySelector(selector);
+    if (!el) return;
+    const existing = _sortableInstances.get(el);
+    if (existing) { try { existing.destroy(); } catch {} }
+    const inst = window.Sortable.create(el, {
+      animation: 180,
+      handle: opts.handle,
+      filter: opts.filter,
+      preventOnFilter: false,
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      dragClass:   'sortable-drag',
+      delay: 150,
+      delayOnTouchOnly: true,
+      touchStartThreshold: 5,
+      onEnd: () => reorderHabitsFromDOM(el),
+    });
+    _sortableInstances.set(el, inst);
+  }
+
+  function reorderHabitsFromDOM(containerEl) {
+    const ids = Array.from(containerEl.querySelectorAll('[data-habit-id]'))
+      .map(n => n.dataset.habitId);
+    if (!ids.length) return;
+    const byId = new Map(habits.map(h => [h.id, h]));
+    const reordered = [];
+    ids.forEach(id => {
+      const h = byId.get(id);
+      if (h) { reordered.push(h); byId.delete(id); }
+    });
+    byId.forEach(h => reordered.push(h)); // append leftovers defensively
+    habits = reordered;
+    persist();
+    // Defer re-renders so Sortable.js can finish its onEnd cleanup.
+    setTimeout(() => {
+      const activeId = document.querySelector('.view.active')?.id;
+      if (activeId === 'view-today')    renderToday();
+      if (activeId === 'view-history')  renderCalendar();
+      if (activeId === 'view-settings') renderSettings();
+      const modalOpen = document.getElementById('editModal').classList.contains('open');
+      if (modalOpen) renderModalHabits();
+    }, 0);
+  }
+
   // ── NAVIGATION ──────────────────────────────────────────────────────────────
   const VIEW_TITLES = { today: 'Today', history: 'Calendar', journal: 'Journal', workout: 'Workout', settings: 'Settings' };
 
@@ -1482,7 +1697,8 @@
       ? habits.map(h => {
           const s = log.habits[h.id] || null;
           return `
-            <div class="habit-card ${s ? 's-'+s : ''}" onclick="cycleHabit('${h.id}')">
+            <div class="habit-card ${s ? 's-'+s : ''}" data-habit-id="${h.id}" onclick="cycleHabit('${h.id}')">
+              <div class="drag-grip" title="Drag to reorder">${GRIP_SVG}</div>
               <div class="hc-icon">${h.icon}</div>
               <div class="hc-info">
                 <div class="hc-name">${h.name}</div>
@@ -1494,6 +1710,7 @@
       : '<div class="empty">No habits yet.<br>Add some in Settings.</div>';
 
     document.getElementById('jdiNum').textContent = log.jdi || 0;
+    initHabitSortable('#habitList', { handle: '.drag-grip' });
   }
 
   function cycleHabit(id) {
@@ -1546,8 +1763,8 @@
     html += '</tr></thead><tbody>';
 
     habits.forEach(h => {
-      html += `<tr class="cal-data-row">
-        <td class="cal-label-cell">
+      html += `<tr class="cal-data-row" data-habit-id="${h.id}">
+        <td class="cal-label-cell drag-grip-cell" title="Drag to reorder">
           <div class="cal-label-inner">
             <span class="cal-label-icon">${h.icon}</span>
             <span>${h.name}</span>
@@ -1585,6 +1802,7 @@
     }
     html += '</tr></tbody>';
     table.innerHTML = html;
+    initHabitSortable('#calTable tbody', { handle: '.cal-label-cell', filter: '.cal-jdi-row' });
 
     const wrap = document.querySelector('.cal-table-wrap');
     if (calYear === today.getFullYear() && calMonth === today.getMonth()) {
@@ -1621,12 +1839,14 @@
     document.getElementById('modalHabits').innerHTML = habits.map(h => {
       const s = log.habits[h.id] || null;
       return `
-        <div class="modal-habit-row ${s ? 's-'+s : ''}" onclick="cycleModalHabit('${h.id}')">
+        <div class="modal-habit-row ${s ? 's-'+s : ''}" data-habit-id="${h.id}" onclick="cycleModalHabit('${h.id}')">
+          <div class="drag-grip" title="Drag to reorder">${GRIP_SVG}</div>
           <div class="mhr-icon">${h.icon}</div>
           <div class="mhr-name">${h.name}</div>
           <div class="mhr-badge">${s ? STATUS_LABEL[s] : '—'}</div>
         </div>`;
     }).join('');
+    initHabitSortable('#modalHabits', { handle: '.drag-grip' });
   }
 
   function cycleModalHabit(id) {
@@ -1672,7 +1892,8 @@
     }
     document.getElementById('settingsList').innerHTML = habits.length
       ? habits.map(h => `
-          <div class="settings-row">
+          <div class="settings-row" data-habit-id="${h.id}">
+            <div class="drag-grip" title="Drag to reorder">${GRIP_SVG}</div>
             <div class="settings-icon">${h.icon}</div>
             <div class="settings-name">${h.name}${h.locked ? ' <span style="font-size:10px;color:var(--muted);font-weight:500">auto-tracked</span>' : ''}</div>
             ${h.locked
@@ -1680,6 +1901,7 @@
               : `<button class="del-btn" onclick="removeHabit('${h.id}')">×</button>`}
           </div>`).join('')
       : '<div class="empty">No habits yet.</div>';
+    initHabitSortable('#settingsList', { handle: '.drag-grip' });
   }
 
   function addHabit() {
@@ -2438,9 +2660,43 @@ ${entry.content}
     document.getElementById('loginScreen').style.display = 'none';
   }
 
+  // iOS Safari cannot finish a popup sign-in: the popup runs in a partitioned
+  // context (and in a home-screen PWA a separate browser entirely), so the
+  // credential never comes back. Those clients get the redirect flow instead.
+  const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const IS_STANDALONE = window.navigator.standalone === true ||
+                        window.matchMedia('(display-mode: standalone)').matches;
+
+  // Popup failures that a redirect can still recover from.
+  const POPUP_FAILURES = [
+    'auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request',
+    'auth/operation-not-supported-in-this-environment', 'auth/web-storage-unsupported',
+    'auth/internal-error',
+  ];
+
+  function showAuthError(e) {
+    if (!e) return;
+    const el = document.getElementById('loginError');
+    if (el) {
+      el.textContent = (e.code || 'sign-in failed') + '\n' + (e.message || e);
+      el.style.display = 'block';
+    }
+    console.error('[auth]', e);
+  }
+
   function signInWithGoogle() {
-    signInWithPopup(auth, new GoogleAuthProvider())
-      .catch(e => alert('Sign in failed: ' + e.message));
+    const provider = new GoogleAuthProvider();
+    const el = document.getElementById('loginError');
+    if (el) el.style.display = 'none';
+
+    authReady.then(() => {
+      if (IS_IOS || IS_STANDALONE) return signInWithRedirect(auth, provider);
+      return signInWithPopup(auth, provider).catch(e =>
+        POPUP_FAILURES.includes(e.code)
+          ? signInWithRedirect(auth, provider)
+          : Promise.reject(e));
+    }).catch(showAuthError);
   }
 
   function doSignOut() {

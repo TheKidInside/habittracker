@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Patch">
@@ -1098,7 +1098,19 @@
       .settings-row:hover .drag-grip,
       .modal-habit-row:hover .drag-grip { opacity: 1; }
     }
+
+    /* Phone lock (same as Chess Coach): no double-tap zoom, no sideways drag, no overscroll bounce
+       or swipe-back. Pinch zoom is blocked by the viewport tag and a script in <head>. */
+    html, body { overscroll-behavior: none; touch-action: manipulation; }
+    body * { overscroll-behavior: none; }  /* every inner scroller: no bounce, no scroll chaining */
+    .today-scroll, .cal-scroll-area, .settings-scroll, .journal-scroll, .record-area, .workout-scroll { touch-action: pan-y; overflow-x: clip; }
+    .cal-table-wrap { touch-action: pan-x pan-y; }
   </style>
+  <script>
+    // iOS Safari ignores user-scalable=no, so block pinch zoom by hand.
+    document.addEventListener('gesturestart', e => e.preventDefault());
+    document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  </script>
 </head>
 <body>
 

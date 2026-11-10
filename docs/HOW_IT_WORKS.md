@@ -13,10 +13,16 @@ tracking, with a per-day counter and a calendar heat view. Read it next to
 ## Part 0 — Run it
 
 It's a PWA — deploy to Firebase Hosting or serve over http/https (Auth won't run over
-`file://`). Stack: one `index.html` (~3,000 lines, vanilla HTML+CSS+JS) using the
+`file://`). Stack: one `index.html` (~3,300 lines, vanilla HTML+CSS+JS) using the
 **modular Firebase SDK** (Auth + Firestore) with `localStorage` fallback, plus two
-CDN libs — JSZip (backup export/import) and SortableJS (drag-reorder). "Paper · Warm
-Editorial" theme.
+CDN libs — JSZip (backup export/import) and SortableJS (drag-reorder) — and the Inter
+font from Google Fonts (falls back to the system font offline).
+
+Look: the November 2026 redesign (design canvas "Patch Redesign"). Neutral paper ground
+`#F6F6F3`, white cards, one blue accent `#1D4ED8`, a dark "Just Do It" card. Status
+colours: Full = blue, Never Zero = light blue, Missed = orange. All colours are tokens in
+`:root` at the top of the `<style>`. The logo is `icon.svg` (a stitched-on patch with a
+check); `icon-180.png` / `icon-512.png` are full-bleed renders of it for the home screen.
 
 ---
 
@@ -37,8 +43,19 @@ small, single-user dataset. (See those apps' HOW_IT_WORKS for the per-item trade
 
 Days are addressed by `dateKey(y,m,d)` → `"2026-08-10"`. `getLog(dk)` lazily creates
 `{ habits:{}, jdi:0 }` for a day. `logs.habits[habitId]` holds that habit's **cycled
-state** for the day; `logs.jdi` is a per-day numeric counter (the **JDI bar** — a
-+/- tally shown on Today, as a row in the calendar, and in the day modal).
+state** for the day; `logs.jdi` is a per-day numeric counter (the **Just Do It** card —
+a +/- tally shown on Today, in the desktop calendar's day panel, on the phone calendar's
+"Just Do It" chip, and in the day modal). Streaks are not stored: `habitStreak(id)`
+counts back over `logs` each render.
+
+### 1.4 One page, two layouts
+
+The same markup serves the phone and the desktop. Below 1024px it's a phone app with a
+bottom tab bar; at 1024px+ the tab bar becomes a left sidebar and pages spread into
+columns. Elements marked `.mob-only` / `.desk-only` show on one side only; `DESKTOP`
+(a `matchMedia`) lets the JS ask which side it's on, and a change listener redraws the
+open view when you cross the line. The header (`renderHeader`) fills the eyebrow, title
+and the page's action buttons for whichever view is open.
 
 ### 1.3 Local-first, then cloud, then realtime
 
@@ -65,9 +82,9 @@ for large or multi-user data.
 
 ### 2.2 Render-the-active-view on snapshot
 
-The snapshot handler asks which view is active and calls just that render
-(`renderToday` / `renderCalendar` / `renderJournal` / `renderSettings`). One update
-path, minimal redraw.
+The snapshot handler calls `renderActive()`, which asks which view is open and calls
+just that render (`renderToday` / `renderCalendar` / `renderJournal` / `renderWorkout` /
+`renderSettings`). One update path, minimal redraw.
 
 ### 2.3 In-code, id-based migrations
 
@@ -78,11 +95,14 @@ data self-heals on open.
 
 ### 2.4 Tap to cycle a day's state
 
-Habits aren't just done/not-done — `cycleHabit(id)` advances a habit's state for the
-day through a small set (with human labels like `Missed`), writing into
-`logs[dk].habits[id]`. The calendar renders each day's states as a heat row; the JDI
-counter has its own +/- controls (`adjJDI`) on Today, in the calendar row, and in the
-modal.
+Habits aren't just done/not-done — on the phone, `cycleHabit(id)` advances a habit's
+state for the day (Not logged → Full → Never Zero → Missed → clear), writing into
+`logs[dk].habits[id]`. On desktop each row has a Full / Never Zero / Missed segmented
+control (`segControl` builds it; `setHabit` sets a state, picking it again clears it).
+The calendar uses the same two ideas: on the phone you pick a habit chip and tap days to
+cycle it (`calTapDay`); on desktop you select a day (`calSelectDay`) and set every habit
+in the side panel (`calSetStatus`, `calAdjJDI`). Today's desktop page also has a
+habits × days grid (`renderMonthGrid`) whose cells open the day modal.
 
 ### 2.5 Backup as a first-class feature
 
@@ -103,15 +123,23 @@ features need the scripts to have loaded.
 Navigate `index.html` by function:
 - **Storage/auth:** `load`, `persist`, `onAuthStateChanged` handler, `onSnapshot`
   subscription, `migrateHabitNames`.
-- **Day model:** `dateKey`, `todayKey`, `getLog`.
-- **Today view:** `renderToday`, `cycleHabit`, `adjJDI`.
-- **Calendar:** `changeMonth`, `renderCalendar`, day `openModal`/`renderModalHabits`/
-  `cycleModalHabit`/`adjModalJDI`.
-- **Settings:** `renderSettings`, `addHabit`, `removeHabit`, `exportBackup`,
-  `importBackup`.
-- **Reorder:** `initHabitSortable`, `reorderHabitsFromDOM` (SortableJS).
-- **Router:** `go(view)`.
-- `sw.js` = offline PWA shell.
+- **Day model:** `dateKey`, `todayKey`, `getLog`, `habitStreak`.
+- **Shell:** `go(view)`, `renderHeader`, `renderActive`, `activeView`, `DESKTOP`, `ico()`
+  (inline SVG icons).
+- **Today view:** `renderToday`, `cycleHabit`, `setHabit`, `adjJDI`, `renderMonthGrid`.
+- **Calendar:** `changeMonth`, `renderCalendar`, `renderDayPanel`, `calTapDay`,
+  `calSelectDay`, `calSetStatus`, `calAdjJDI`, `calPickHabit`; day modal
+  `openModal`/`renderModalHabits`/`cycleModalHabit`/`adjModalJDI`.
+- **Journal:** `renderJournal`, `getFilteredEntries`, `applyFilters`, selection +
+  `exportSelected`; new entry `openNewEntry`/`showStep`/`saveEntry`. On desktop
+  `placeJournalEditor` moves the entry form (`#journalStep2`) out of the modal into the
+  page's right-hand panel; `editorInline()` tells the two homes apart.
+- **Workout:** `renderWorkout`, `toggleWorkoutSet`, `workoutSetsOn`/`workoutVolumeOn`
+  (the desktop tiles and "This week" list read past days' logs).
+- **Settings:** `renderSettings`, `renderAccount`, `addHabit`, `removeHabit`,
+  `exportBackup`, `importBackup`.
+- **Reorder:** `initHabitSortable`, `reorderHabitsFromDOM` (SortableJS, Settings list).
+- `sw.js` = offline PWA shell (bump `CACHE` when the shell or icons change).
 
 ---
 
@@ -123,8 +151,9 @@ Navigate `index.html` by function:
 3. `renderToday` redraws the row in its new state.
 4. On your other device, `onSnapshot` fires with the updated document → replaces
    `habits/logs/journal` → re-renders whatever view is active there.
-5. Open History → `renderCalendar` reads `logs` and paints today's cell with the new
-   state (and the JDI count as its own row). Same data, different view.
+5. Open Calendar → `renderCalendar` reads `logs` and paints today's cell with the new
+   state (phone: in the chosen habit's month; desktop: as one bar in today's cell, and
+   in the day panel). Same data, different view.
 
 ---
 
@@ -132,9 +161,11 @@ Navigate `index.html` by function:
 
 | You want to… | Where | What to do |
 |---|---|---|
-| Add a habit-day state | `cycleHabit` + the state label map + calendar CSS | Extend the cycle; style the new state |
+| Add a habit-day state | `CYCLE`, `STATUS_LABEL`, `SEG_OPTIONS`, `STATUS_CLASS`/`GRID_CLASS` + CSS | Extend the cycle; style the new state |
+| Change a colour | `:root` tokens at the top of `<style>` | Every component reads the tokens |
+| Phone-only or desktop-only piece | `.mob-only` / `.desk-only` | Breakpoint is 1024px; `isDesktop()` in JS |
 | Rename a habit safely | `HABIT_RENAMES` | Map its `id` → new name/icon; applies on next load |
-| Add a view | `go()` + a `render*` + the snapshot handler | Register it so snapshots re-render it |
+| Add a view | a `.view` + nav button, `VIEW_TITLES`, `renderHeader`, `renderActive` | Register it so `go()` and snapshots re-render it |
 | Change the JDI counter | `adjJDI` / `.jdi-*` CSS | It's a per-day integer in `logs[dk].jdi` |
 | Backup format | `exportBackup`/`importBackup` | Whole-state is three plain objects |
 

@@ -1,5 +1,5 @@
-const CACHE = 'habits-v5';
-const ASSETS = ['./index.html', './manifest.json'];
+const CACHE = 'habits-v6';
+const ASSETS = ['./index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
